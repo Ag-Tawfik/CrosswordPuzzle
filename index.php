@@ -18,6 +18,7 @@
             height: 30px;
             width: 30px;
             text-align: center;
+            position: relative;
         }
 
         .black {
@@ -26,6 +27,13 @@
 
         .white {
             background-color: #fff;
+        }
+
+        .number {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            font-size: 10px;
         }
 
         h2 {
@@ -49,7 +57,8 @@
                 for ($j = 0; $j < $columns; $j++) {
                     $puzzleGrid[$i][$j] = [
                         'cell' => '<td class="black"></td>',
-                        'letter' => null
+                        'letter' => null,
+                        'number' => null
                     ];
                 }
             }
@@ -60,6 +69,8 @@
         function placeWordsInGrid(&$puzzleGrid, $words)
         {
             $placedWords = [];
+            $wordNumber = 1;
+            $usedWords = [];
             
             // Sort words by length (descending) to place longer words first
             usort($words, function($a, $b) {
@@ -72,6 +83,9 @@
             $startRow = floor(count($puzzleGrid) / 2);
             $startColumn = floor((count($puzzleGrid[0]) - $firstWordLength) / 2);
             
+            // Number the first cell of the first word
+            $puzzleGrid[$startRow][$startColumn]['number'] = $wordNumber++;
+            
             for ($i = 0; $i < $firstWordLength; $i++) {
                 $puzzleGrid[$startRow][$startColumn + $i]['cell'] = '<td class="white"></td>';
                 $puzzleGrid[$startRow][$startColumn + $i]['letter'] = $firstWord[$i];
@@ -83,9 +97,15 @@
                 'startRow' => $startRow,
                 'startColumn' => $startColumn
             ];
+            $usedWords[] = $firstWord;
             
             // Now try to place remaining words with intersections
             foreach ($words as $word) {
+                // Skip if this word has already been placed
+                if (in_array($word, $usedWords)) {
+                    continue;
+                }
+                
                 $placed = false;
                 $wordLength = strlen($word);
                 
@@ -131,6 +151,32 @@
                                     
                                     // Check if the word fits at this position
                                     $fits = true;
+                                    
+                                    // Check for word boundaries (prevent words from connecting end-to-end)
+                                    if ($newOrientation === 0) { // Horizontal
+                                        // Check left boundary (either grid edge or black cell)
+                                        if ($col > 0 && $puzzleGrid[$row][$col - 1]['letter'] !== null) {
+                                            $fits = false;
+                                        }
+                                        // Check right boundary (either grid edge or black cell)
+                                        if ($col + $wordLength < count($puzzleGrid[0]) && $puzzleGrid[$row][$col + $wordLength]['letter'] !== null) {
+                                            $fits = false;
+                                        }
+                                    } else { // Vertical
+                                        // Check top boundary (either grid edge or black cell)
+                                        if ($row > 0 && $puzzleGrid[$row - 1][$col]['letter'] !== null) {
+                                            $fits = false;
+                                        }
+                                        // Check bottom boundary (either grid edge or black cell)
+                                        if ($row + $wordLength < count($puzzleGrid) && $puzzleGrid[$row + $wordLength][$col]['letter'] !== null) {
+                                            $fits = false;
+                                        }
+                                    }
+                                    
+                                    if (!$fits) {
+                                        continue;
+                                    }
+                                    
                                     for ($j = 0; $j < $wordLength; $j++) {
                                         if ($newOrientation === 0) { // Horizontal
                                             // Skip check at intersection point
@@ -176,6 +222,17 @@
                                     }
                                     
                                     if ($fits) {
+                                        // Number the first cell of the word if it doesn't already have a number
+                                        if ($newOrientation === 0) { // Horizontal
+                                            if ($puzzleGrid[$row][$col]['number'] === null) {
+                                                $puzzleGrid[$row][$col]['number'] = $wordNumber++;
+                                            }
+                                        } else { // Vertical
+                                            if ($puzzleGrid[$row][$col]['number'] === null) {
+                                                $puzzleGrid[$row][$col]['number'] = $wordNumber++;
+                                            }
+                                        }
+                                        
                                         // Place the word
                                         for ($j = 0; $j < $wordLength; $j++) {
                                             if ($newOrientation === 0) { // Horizontal
@@ -193,6 +250,7 @@
                                             'startRow' => $row,
                                             'startColumn' => $col
                                         ];
+                                        $usedWords[] = $word;
                                         
                                         $placed = true;
                                         break 3; // Exit all loops
@@ -233,7 +291,33 @@
                             }
                         }
                         
+                        // Check for word boundaries (prevent words from connecting end-to-end)
                         if ($fits) {
+                            if ($orientation === 0) { // Horizontal
+                                // Check left boundary (either grid edge or black cell)
+                                if ($startColumn > 0 && $puzzleGrid[$startRow][$startColumn - 1]['letter'] !== null) {
+                                    $fits = false;
+                                }
+                                // Check right boundary (either grid edge or black cell)
+                                if ($startColumn + $wordLength < count($puzzleGrid[0]) && $puzzleGrid[$startRow][$startColumn + $wordLength]['letter'] !== null) {
+                                    $fits = false;
+                                }
+                            } else { // Vertical
+                                // Check top boundary (either grid edge or black cell)
+                                if ($startRow > 0 && $puzzleGrid[$startRow - 1][$startColumn]['letter'] !== null) {
+                                    $fits = false;
+                                }
+                                // Check bottom boundary (either grid edge or black cell)
+                                if ($startRow + $wordLength < count($puzzleGrid) && $puzzleGrid[$startRow + $wordLength][$startColumn]['letter'] !== null) {
+                                    $fits = false;
+                                }
+                            }
+                        }
+                        
+                        if ($fits) {
+                            // Number the first cell of the word
+                            $puzzleGrid[$startRow][$startColumn]['number'] = $wordNumber++;
+                            
                             for ($i = 0; $i < $wordLength; $i++) {
                                 if ($orientation === 0) { // Horizontal
                                     $puzzleGrid[$startRow][$startColumn + $i]['cell'] = '<td class="white"></td>';
@@ -250,6 +334,7 @@
                                 'startRow' => $startRow,
                                 'startColumn' => $startColumn
                             ];
+                            $usedWords[] = $word;
                             
                             $placed = true;
                             break;
@@ -257,6 +342,8 @@
                     }
                 }
             }
+            
+            return $placedWords;
         }
 
         $rows = 12;
@@ -265,18 +352,67 @@
         $puzzleGrid = generatePuzzleGrid($rows, $columns);
 
         $words = ['CAT', 'DOG', 'MOUSE', 'FISH', 'BIRD', 'LION', 'TIGER', 'BEAR', 'MONKEY', 'COW', 'PIG', 'SHEEP', 'HUMAN'];
+        // Ensure no duplicate words
+        $words = array_unique($words);
 
-        placeWordsInGrid($puzzleGrid, $words);
+        $placedWords = placeWordsInGrid($puzzleGrid, $words);
 
-        foreach ($puzzleGrid as $row) {
+        // Render the grid with word numbers
+        for ($i = 0; $i < $rows; $i++) {
             echo '<tr>';
-            foreach ($row as $cell) {
-                echo $cell['cell'];
+            for ($j = 0; $j < $columns; $j++) {
+                if ($puzzleGrid[$i][$j]['letter'] !== null) {
+                    echo '<td class="white">';
+                    if ($puzzleGrid[$i][$j]['number'] !== null) {
+                        echo '<span class="number">' . $puzzleGrid[$i][$j]['number'] . '</span>';
+                    }
+                    echo '</td>';
+                } else {
+                    echo '<td class="black"></td>';
+                }
             }
             echo '</tr>';
         }
+        
+        // Output the clues
+        echo '</table>';
+        
+        echo '<div style="width: 50%; margin: auto; margin-top: 30px;">';
+        echo '<h3>Across</h3>';
+        echo '<ul>';
+        $seenAcrossWords = [];
+        foreach ($placedWords as $word) {
+            if ($word['orientation'] === 0) { // Horizontal
+                // Skip if we've already seen this word
+                if (in_array($word['word'], $seenAcrossWords)) {
+                    continue;
+                }
+                $seenAcrossWords[] = $word['word'];
+                
+                $number = $puzzleGrid[$word['startRow']][$word['startColumn']]['number'];
+                echo '<li>' . $number . '. ' . $word['word'] . '</li>';
+            }
+        }
+        echo '</ul>';
+        
+        echo '<h3>Down</h3>';
+        echo '<ul>';
+        $seenDownWords = [];
+        foreach ($placedWords as $word) {
+            if ($word['orientation'] === 1) { // Vertical
+                // Skip if we've already seen this word
+                if (in_array($word['word'], $seenDownWords)) {
+                    continue;
+                }
+                $seenDownWords[] = $word['word'];
+                
+                $number = $puzzleGrid[$word['startRow']][$word['startColumn']]['number'];
+                echo '<li>' . $number . '. ' . $word['word'] . '</li>';
+            }
+        }
+        echo '</ul>';
+        echo '</div>';
         ?>
-    </table>
 
 </body>
 
