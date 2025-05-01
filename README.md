@@ -12,7 +12,7 @@ A PHP-based crossword puzzle generator that automatically creates a 12x12 crossw
 
 ## Requirements
 
-- PHP 7.0 or higher
+- PHP 8.4.6
 - A web server (Apache, Nginx, etc.)
 
 ## Installation
