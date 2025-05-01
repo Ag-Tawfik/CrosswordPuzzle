@@ -388,10 +388,11 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
 
         td {
             border: 1px solid #000;
-            height: 30px;
-            width: 30px;
+            height: 40px;
+            width: 40px;
             text-align: center;
             position: relative;
+            padding: 0;
         }
 
         .black {
@@ -407,10 +408,53 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
             top: 1px;
             left: 1px;
             font-size: 10px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .cell-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 20px;
+            text-transform: uppercase;
+            background: transparent;
+            box-sizing: border-box;
+            position: relative;
+            outline: none;
+        }
+
+        .selected {
+            background-color: #ffeb3b;
+        }
+
+        .correct {
+            background-color: #a2ffa2;
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #45a049;
         }
 
         h2 {
             text-align: center;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px;
         }
     </style>
 </head>
@@ -419,17 +463,30 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
 
     <h2>12x12 Crossword Puzzle</h2>
 
-    <table>
+    <div class="controls">
+        <button id="check-puzzle">Check Answers</button>
+        <button id="reveal-puzzle">Reveal Answers</button>
+        <button id="reset-puzzle">Reset</button>
+    </div>
+
+    <table id="crossword-grid">
         <?php
-        // Render the grid with word numbers
+        // Render the grid with word numbers and input fields
         for ($i = 0; $i < $rows; $i++) {
             echo '<tr>';
             for ($j = 0; $j < $columns; $j++) {
                 if ($puzzleGrid[$i][$j]->letter !== null) {
-                    echo '<td class="white">';
+                    echo '<td class="white" data-row="' . $i . '" data-col="' . $j . '">';
                     if ($puzzleGrid[$i][$j]->number !== null) {
                         echo '<span class="number">' . $puzzleGrid[$i][$j]->number . '</span>';
                     }
+                    echo '<input 
+                        type="text" 
+                        class="cell-input" 
+                        maxlength="1" 
+                        data-row="' . $i . '" 
+                        data-col="' . $j . '" 
+                        data-letter="' . $puzzleGrid[$i][$j]->letter . '">';
                     echo '</td>';
                 } else {
                     echo '<td class="black"></td>';
@@ -443,7 +500,7 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
         
         echo '<div style="width: 50%; margin: auto; margin-top: 30px;">';
         echo '<h3>Across</h3>';
-        echo '<ul>';
+        echo '<ul id="across-clues">';
         $seenAcrossWords = [];
         foreach ($placedWords as $word) {
             if ($word->orientation === 0) { // Horizontal
@@ -455,13 +512,13 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
                 
                 $number = $puzzleGrid[$word->startRow][$word->startColumn]->number;
                 $clue = generateClue($word->word);
-                echo '<li>' . $number . '. ' . $clue . '</li>';
+                echo '<li data-word="' . $word->word . '" data-orientation="0" data-row="' . $word->startRow . '" data-col="' . $word->startColumn . '" class="clue">' . $number . '. ' . $clue . '</li>';
             }
         }
         echo '</ul>';
         
         echo '<h3>Down</h3>';
-        echo '<ul>';
+        echo '<ul id="down-clues">';
         $seenDownWords = [];
         foreach ($placedWords as $word) {
             if ($word->orientation === 1) { // Vertical
@@ -473,12 +530,198 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
                 
                 $number = $puzzleGrid[$word->startRow][$word->startColumn]->number;
                 $clue = generateClue($word->word);
-                echo '<li>' . $number . '. ' . $clue . '</li>';
+                echo '<li data-word="' . $word->word . '" data-orientation="1" data-row="' . $word->startRow . '" data-col="' . $word->startColumn . '" class="clue">' . $number . '. ' . $clue . '</li>';
             }
         }
         echo '</ul>';
         echo '</div>';
         ?>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('crossword-grid');
+            const inputs = document.querySelectorAll('.cell-input');
+            const clues = document.querySelectorAll('.clue');
+            const checkButton = document.getElementById('check-puzzle');
+            const revealButton = document.getElementById('reveal-puzzle');
+            const resetButton = document.getElementById('reset-puzzle');
+            
+            let currentRow = 0;
+            let currentCol = 0;
+            let currentOrientation = 0; // 0 for horizontal, 1 for vertical
+            
+            // Initialize the first input
+            const firstInput = document.querySelector('.cell-input');
+            if (firstInput) {
+                firstInput.focus();
+                highlightCurrentWord();
+            }
+            
+            // Add event listeners to all input cells
+            inputs.forEach(input => {
+                // Focus event to track current position
+                input.addEventListener('focus', function(e) {
+                    currentRow = parseInt(this.getAttribute('data-row'));
+                    currentCol = parseInt(this.getAttribute('data-col'));
+                    highlightCurrentWord();
+                });
+                
+                // Key input handling
+                input.addEventListener('keydown', function(e) {
+                    const row = parseInt(this.getAttribute('data-row'));
+                    const col = parseInt(this.getAttribute('data-col'));
+                    
+                    // Arrow key navigation
+                    if (e.key === 'ArrowRight') {
+                        moveTo(row, col + 1);
+                        e.preventDefault();
+                    } else if (e.key === 'ArrowLeft') {
+                        moveTo(row, col - 1);
+                        e.preventDefault();
+                    } else if (e.key === 'ArrowDown') {
+                        moveTo(row + 1, col);
+                        e.preventDefault();
+                    } else if (e.key === 'ArrowUp') {
+                        moveTo(row - 1, col);
+                        e.preventDefault();
+                    } else if (e.key === 'Tab') {
+                        e.preventDefault();
+                        currentOrientation = currentOrientation === 0 ? 1 : 0;
+                        highlightCurrentWord();
+                    } else if (e.key === 'Backspace' && this.value === '') {
+                        // Move to previous cell when backspacing on empty cell
+                        if (currentOrientation === 0) {
+                            moveTo(row, col - 1);
+                        } else {
+                            moveTo(row - 1, col);
+                        }
+                        e.preventDefault();
+                    }
+                });
+                
+                // Auto-advance to next cell after input
+                input.addEventListener('input', function(e) {
+                    if (this.value.length === 1) {
+                        this.value = this.value.toUpperCase();
+                        // Move to next cell based on current orientation
+                        if (currentOrientation === 0) {
+                            moveTo(currentRow, currentCol + 1);
+                        } else {
+                            moveTo(currentRow + 1, currentCol);
+                        }
+                    }
+                });
+                
+                // Handle click on clue
+                clues.forEach(clue => {
+                    clue.addEventListener('click', function() {
+                        const row = parseInt(this.getAttribute('data-row'));
+                        const col = parseInt(this.getAttribute('data-col'));
+                        currentOrientation = parseInt(this.getAttribute('data-orientation'));
+                        
+                        moveTo(row, col);
+                        highlightCurrentWord();
+                    });
+                });
+            });
+            
+            // Check button handler
+            checkButton.addEventListener('click', function() {
+                inputs.forEach(input => {
+                    const correctLetter = input.getAttribute('data-letter');
+                    if (input.value.toUpperCase() === correctLetter) {
+                        input.classList.add('correct');
+                    } else if (input.value !== '') {
+                        input.classList.remove('correct');
+                        input.value = '';
+                    }
+                });
+            });
+            
+            // Reveal button handler
+            revealButton.addEventListener('click', function() {
+                inputs.forEach(input => {
+                    const correctLetter = input.getAttribute('data-letter');
+                    input.value = correctLetter;
+                    input.classList.add('correct');
+                });
+            });
+            
+            // Reset button handler
+            resetButton.addEventListener('click', function() {
+                inputs.forEach(input => {
+                    input.value = '';
+                    input.classList.remove('correct');
+                    input.classList.remove('selected');
+                });
+                
+                // Focus the first input
+                const firstInput = document.querySelector('.cell-input');
+                if (firstInput) {
+                    firstInput.focus();
+                }
+            });
+            
+            // Helper function to move to a specific cell
+            function moveTo(row, col) {
+                const nextInput = document.querySelector(`.cell-input[data-row="${row}"][data-col="${col}"]`);
+                if (nextInput) {
+                    nextInput.focus();
+                    currentRow = row;
+                    currentCol = col;
+                }
+            }
+            
+            // Helper function to highlight the current word
+            function highlightCurrentWord() {
+                // Clear all highlights
+                inputs.forEach(input => {
+                    input.classList.remove('selected');
+                });
+                
+                // Find current cell
+                const currentCell = document.querySelector(`.cell-input[data-row="${currentRow}"][data-col="${currentCol}"]`);
+                if (!currentCell) return;
+                
+                // Find all cells in the current word
+                if (currentOrientation === 0) { // Horizontal
+                    // Find start of horizontal word
+                    let startCol = currentCol;
+                    while (startCol > 0) {
+                        const prevCell = document.querySelector(`.cell-input[data-row="${currentRow}"][data-col="${startCol-1}"]`);
+                        if (!prevCell) break;
+                        startCol--;
+                    }
+                    
+                    // Highlight all cells in horizontal word
+                    let colIndex = startCol;
+                    while (true) {
+                        const cell = document.querySelector(`.cell-input[data-row="${currentRow}"][data-col="${colIndex}"]`);
+                        if (!cell) break;
+                        cell.classList.add('selected');
+                        colIndex++;
+                    }
+                } else { // Vertical
+                    // Find start of vertical word
+                    let startRow = currentRow;
+                    while (startRow > 0) {
+                        const prevCell = document.querySelector(`.cell-input[data-row="${startRow-1}"][data-col="${currentCol}"]`);
+                        if (!prevCell) break;
+                        startRow--;
+                    }
+                    
+                    // Highlight all cells in vertical word
+                    let rowIndex = startRow;
+                    while (true) {
+                        const cell = document.querySelector(`.cell-input[data-row="${rowIndex}"][data-col="${currentCol}"]`);
+                        if (!cell) break;
+                        cell.classList.add('selected');
+                        rowIndex++;
+                    }
+                }
+            }
+        });
+    </script>
 
 </body>
 
