@@ -39,6 +39,30 @@ class PlacedWord {
 }
 
 /**
+ * Generates a clue for a given word
+ */
+function generateClue(string $word): string {
+    $clues = [
+        'CAT' => 'A small domesticated carnivorous mammal that purrs',
+        'DOG' => 'Man\'s best friend',
+        'MOUSE' => 'A small rodent with a pointed snout',
+        'FISH' => 'An aquatic animal with fins and gills',
+        'BIRD' => 'A warm-blooded egg-laying vertebrate with wings',
+        'LION' => 'The king of the jungle',
+        'TIGER' => 'Large Asian big cat with orange fur and black stripes',
+        'BEAR' => 'Large, heavy mammal with thick fur and a short tail',
+        'MONKEY' => 'A primate that typically has a long tail',
+        'COW' => 'A domesticated animal that produces milk',
+        'PIG' => 'A domesticated omnivorous mammal with a snout',
+        'SHEEP' => 'A domesticated ruminant animal with a woolly coat',
+        'HUMAN' => 'Homo sapiens',
+    ];
+    
+    // Return the clue if it exists, otherwise generate a generic clue
+    return $clues[$word] ?? 'Definition for ' . strtolower($word);
+}
+
+/**
  * Generates an empty puzzle grid
  */
 function generatePuzzleGrid(int $rows, int $columns): array
@@ -430,7 +454,8 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
                 $seenAcrossWords[] = $word->word;
                 
                 $number = $puzzleGrid[$word->startRow][$word->startColumn]->number;
-                echo '<li>' . $number . '. ' . $word->word . '</li>';
+                $clue = generateClue($word->word);
+                echo '<li>' . $number . '. ' . $clue . '</li>';
             }
         }
         echo '</ul>';
@@ -447,7 +472,8 @@ $placedWords = placeWordsInGrid($puzzleGrid, $words);
                 $seenDownWords[] = $word->word;
                 
                 $number = $puzzleGrid[$word->startRow][$word->startColumn]->number;
-                echo '<li>' . $number . '. ' . $word->word . '</li>';
+                $clue = generateClue($word->word);
+                echo '<li>' . $number . '. ' . $clue . '</li>';
             }
         }
         echo '</ul>';
