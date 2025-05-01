@@ -1,6 +1,6 @@
 # Crossword Puzzle Generator
 
-A PHP-based crossword puzzle generator that automatically creates a 12x12 crossword puzzle from a list of words.
+A PHP-based crossword puzzle generator that automatically creates a 12x12 interactive crossword puzzle from a list of words.
 
 ## Features
 
@@ -8,12 +8,17 @@ A PHP-based crossword puzzle generator that automatically creates a 12x12 crossw
 - Words are placed in both horizontal and across directions
 - Each word is automatically numbered
 - Words are properly isolated with black cells between them
-- Displays clues for both "Across" and "Down" words
+- Displays descriptive clues
+- **Interactive gameplay** with keyboard navigation and input validation
+- **Word highlighting** shows the current word being worked on
+- **Check answers** functionality to validate user inputs
+- **Reveal solution** option for when you're stuck
 
 ## Requirements
 
 - PHP 8.4.6
 - A web server (Apache, Nginx, etc.)
+- Modern web browser with JavaScript enabled
 
 ## Installation
 
@@ -23,11 +28,19 @@ A PHP-based crossword puzzle generator that automatically creates a 12x12 crossw
 
 ## Usage
 
-The application will generate a crossword puzzle upon loading. The current version uses a predefined list of words:
+### Solving the Crossword
 
-```php
-$words = ['CAT', 'DOG', 'MOUSE', 'FISH', 'BIRD', 'LION', 'TIGER', 'BEAR', 'MONKEY', 'COW', 'PIG', 'SHEEP', 'HUMAN'];
-```
+- Click on any cell or clue to begin
+- Type letters to fill in the cells
+- Use arrow keys to navigate between cells
+- Press Tab to switch between across and down orientation
+- Click on a clue to jump to that word
+
+### Control Buttons
+
+- **Check Answers**: Validates your entries, keeps correct letters and clears incorrect ones
+- **Reveal Answers**: Shows the complete solution
+- **Reset**: Clears all entries to start over
 
 ### Customizing Words
 
@@ -35,6 +48,20 @@ To customize the words used in the puzzle, edit the `$words` array in `index.php
 
 ```php
 $words = ['YOUR', 'CUSTOM', 'WORDS', 'HERE'];
+```
+
+You will also need to update the clues in the `generateClue()` function:
+
+```php
+function generateClue(string $word): string {
+    $clues = [
+        'YOUR' => 'Clue for your word',
+        'CUSTOM' => 'Clue for custom',
+        // Add more clues here
+    ];
+    
+    return $clues[$word] ?? 'Definition for ' . strtolower($word);
+}
 ```
 
 ### Customizing the Grid Size
@@ -53,6 +80,8 @@ $columns = 15; // Change from 12 to your desired column count
 3. Attempts to place remaining words with intersections to existing words
 4. If intersection placement fails, tries random placement
 5. Numbers each word and generates clue lists for Across and Down words
+6. Renders the grid with input fields for user interaction
+7. Uses JavaScript to enable keyboard navigation and answer validation
 
 ## Customization
 
