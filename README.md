@@ -118,12 +118,15 @@ Words may contain letters only and must be no longer than the smallest grid you 
 - `crossword.css` styles, including dark mode and print
 - `words/*.json` word sets
 - `tests/generator_test.php` checks the generator, the word sets, seeding and the page
-- `.github/workflows/test.yml` runs the tests on PHP 8.0 and 8.4
+- `tests/browser.test.js` drives the game in Chromium: typing, navigation, phones, creator, stats, modes, print
+- `.github/workflows/test.yml` runs both on every push
 
 ## Running the Tests
 
 ```sh
-php tests/generator_test.php
+php tests/generator_test.php        # generator and page
+npm install && npx playwright install chromium
+npm run test:browser                # game in a real browser
 ```
 
 ## License
