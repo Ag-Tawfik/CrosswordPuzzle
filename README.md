@@ -11,6 +11,7 @@ A PHP and JavaScript crossword game. Every day gets a fresh puzzle per category,
 - Proper crossword rules: every word crosses another, no side-by-side or end-to-end joins
 - Clues numbered in reading order, with the active clue shown above the grid
 - Keyboard navigation that follows crossword conventions
+- Works on phones: the grid scales to the screen, the active clue stays pinned at the top, and the keyboard stays open while you move between cells
 - Check word, check all, reveal letter, reveal word
 - Timer, fill percentage, completed clues struck through, and a win message
 - Progress and solve state saved per puzzle in the browser
@@ -43,7 +44,7 @@ then open http://localhost:8000 in a browser.
 |---|---|---|
 | `set` | Word set, the file name in `words/` without `.json` | `animals` |
 | `size` | Grid size, 8 to 20 | `12` |
-| `seed` | Puzzle number. The same number always gives the same puzzle | Today's date |
+| `seed` | Puzzle number. The same number always gives the same puzzle | Today's date (UTC) |
 | `format=json` | Return the puzzle as JSON instead of the page | |
 
 Examples:
@@ -54,10 +55,10 @@ Examples:
 
 ### Playing
 
-- Click a cell or a clue to select a word. The clue appears above the grid
+- Tap or click a cell or a clue to select a word. The clue appears in the bar above the grid, with previous and next word buttons
 - Type letters. The cursor skips filled cells and jumps to the next unfinished clue at the end of a word
 - Arrow keys move along the current direction. Pressing an arrow across the direction switches it
-- Enter, Space, or clicking the selected cell switches between across and down
+- Enter, Space, or tapping the selected cell again switches between across and down
 - Backspace clears and steps back
 - **Check word** and **Check all** mark cells green or red without changing them
 - **Reveal letter** and **Reveal word** fill in answers, shown in blue
@@ -89,7 +90,7 @@ Words may contain letters only and must be no longer than the smallest grid you 
 3. Each remaining word is placed so that it crosses an existing word, choosing at random among legal positions. Words that do not fit are retried after each pass
 4. The whole process runs a few hundred times and the layout with the most words wins
 5. Words are numbered in reading order and the puzzle is emitted as JSON
-6. `crossword.js` renders the grid, handles input, saves progress and detects completion
+6. `crossword.js` renders the grid, routes all typing through one hidden input so phone keyboards stay open, saves progress and detects completion
 
 ## Project Layout
 

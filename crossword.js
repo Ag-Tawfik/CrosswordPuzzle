@@ -8,6 +8,7 @@
     const storageKey = `crossword:${puzzle.set}:${puzzle.rows}:${puzzle.seed}`;
 
     const gridEl = document.getElementById('crossword-grid');
+    const kbd = document.getElementById('kbd');
     const activeClueEl = document.getElementById('active-clue');
     const timerEl = document.getElementById('timer');
     const progressEl = document.getElementById('progress');
@@ -16,7 +17,7 @@
 
     // --- State ----------------------------------------------------------------
 
-    const cells = [];          // cells[r][c] = { td, input, letter, number } or null
+    const cells = [];          // cells[r][c] = { td, letterEl, value, letter, number, r, c } or null
     const clues = { [ACROSS]: puzzle.across, [DOWN]: puzzle.down };
     let current = null;        // { r, c }
     let orientation = ACROSS;
@@ -37,7 +38,7 @@
 
     function saveState() {
         try {
-            const entries = cells.map(row => row.map(cell => cell ? cell.input.value : null));
+            const entries = cells.map(row => row.map(cell => cell ? cell.value : null));
             localStorage.setItem(storageKey, JSON.stringify({ entries, elapsed, solved }));
         } catch (e) {
             // Storage unavailable (private mode, quota); the game still works without it
@@ -50,6 +51,10 @@
         return (cells[r] && cells[r][c]) || null;
     }
 
+    function allCells() {
+        return cells.flat().filter(Boolean);
+    }
+
     function step(o) {
         return o === ACROSS ? { dr: 0, dc: 1 } : { dr: 1, dc: 0 };
     }
@@ -59,7 +64,7 @@
         const { dr, dc } = step(o);
         while (cellAt(r - dr, c - dc)) { r -= dr; c -= dc; }
         const out = [];
-        while (cellAt(r, c)) { out.push({ r, c }); r += dr; c += dc; }
+        while (cellAt(r, c)) { out.push(cellAt(r, c)); r += dr; c += dc; }
         return out;
     }
 
@@ -77,7 +82,13 @@
     }
 
     function isClueComplete(cl, o) {
-        return wordCells(cl.row, cl.col, o).every(p => cellAt(p.r, p.c).input.value !== '');
+        return wordCells(cl.row, cl.col, o).every(cell => cell.value !== '');
+    }
+
+    function setValue(cell, value) {
+        cell.value = value;
+        cell.letterEl.textContent = value;
+        cell.td.classList.remove('correct', 'incorrect');
     }
 
     // --- Rendering ----------------------------------------------------------------
@@ -94,23 +105,33 @@
                     cells[r][c] = null;
                 } else {
                     td.className = 'white';
+                    td.dataset.row = r;
+                    td.dataset.col = c;
+                    td.setAttribute('role', 'gridcell');
+                    td.setAttribute('aria-label', `Row ${r + 1} column ${c + 1}`);
                     if (data.number !== null) {
                         const num = document.createElement('span');
                         num.className = 'number';
                         num.textContent = data.number;
                         td.appendChild(num);
                     }
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'cell-input';
-                    input.maxLength = 1;
-                    input.autocomplete = 'off';
-                    input.setAttribute('aria-label', `Row ${r + 1} column ${c + 1}`);
-                    input.dataset.row = r;
-                    input.dataset.col = c;
-                    td.appendChild(input);
-                    cells[r][c] = { td, input, letter: data.letter, number: data.number, r, c };
-                    bindCell(cells[r][c]);
+                    const letterEl = document.createElement('span');
+                    letterEl.className = 'letter';
+                    td.appendChild(letterEl);
+                    const cell = { td, letterEl, value: '', letter: data.letter, number: data.number, r, c };
+                    cells[r][c] = cell;
+                    td.addEventListener('pointerdown', e => {
+                        e.preventDefault(); // keep focus on the keyboard input
+                        const wasActive = document.activeElement === kbd;
+                        if (current && current.r === r && current.c === c) {
+                            // Tapping the selected cell toggles direction, but only if the
+                            // grid was already active; a first tap should just open the keyboard
+                            if (wasActive) toggleOrientation();
+                        } else {
+                            setCurrent(cell);
+                        }
+                        focusKeyboard();
+                    });
                 }
                 tr.appendChild(td);
             }
@@ -125,9 +146,8 @@
                 li.className = 'clue';
                 li.textContent = `${cl.number}. ${cl.clue}`;
                 li.addEventListener('click', () => {
-                    orientation = o;
-                    const firstEmpty = wordCells(cl.row, cl.col, o).find(p => cellAt(p.r, p.c).input.value === '');
-                    setCurrent(firstEmpty || { r: cl.row, c: cl.col });
+                    goToClue(cl, o);
+                    focusKeyboard();
                 });
                 cl.el = li;
                 clueLists[o].appendChild(li);
@@ -136,11 +156,11 @@
     }
 
     function refreshHighlight() {
-        cells.flat().forEach(cell => { if (cell) cell.td.classList.remove('selected', 'current'); });
+        allCells().forEach(cell => cell.td.classList.remove('selected', 'current'));
         Object.values(clues).flat().forEach(cl => cl.el.classList.remove('active'));
         if (!current) return;
 
-        wordCells(current.r, current.c, orientation).forEach(p => cellAt(p.r, p.c).td.classList.add('selected'));
+        wordCells(current.r, current.c, orientation).forEach(cell => cell.td.classList.add('selected'));
         cellAt(current.r, current.c).td.classList.add('current');
 
         const cl = clueFor(current.r, current.c, orientation);
@@ -157,8 +177,8 @@
     }
 
     function refreshProgress() {
-        const all = cells.flat().filter(Boolean);
-        const filled = all.filter(cell => cell.input.value !== '').length;
+        const all = allCells();
+        const filled = all.filter(cell => cell.value !== '').length;
         progressEl.textContent = Math.round(100 * filled / all.length) + '%';
     }
 
@@ -166,20 +186,33 @@
         return s.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
     }
 
+    // --- Keyboard input -------------------------------------------------------------
+
+    function focusKeyboard() {
+        if (document.activeElement !== kbd) {
+            kbd.focus({ preventScroll: true });
+        }
+    }
+
+    // Keep the hidden input near the current cell so browsers do not scroll away from it
+    function positionKeyboard() {
+        if (!current) return;
+        const rect = cellAt(current.r, current.c).td.getBoundingClientRect();
+        kbd.style.top = Math.max(0, rect.top) + 'px';
+        kbd.style.left = Math.max(0, rect.left) + 'px';
+    }
+
     // --- Navigation ---------------------------------------------------------------
 
-    function setCurrent(pos, opts = {}) {
-        if (!cellAt(pos.r, pos.c)) return;
-        current = { r: pos.r, c: pos.c };
+    function setCurrent(cell) {
+        if (!cell) return;
+        current = { r: cell.r, c: cell.c };
         // If there is no word in this orientation through the cell, use the other one
-        if (!hasWord(pos.r, pos.c, orientation) && hasWord(pos.r, pos.c, 1 - orientation)) {
+        if (!hasWord(cell.r, cell.c, orientation) && hasWord(cell.r, cell.c, 1 - orientation)) {
             orientation = 1 - orientation;
         }
-        const input = cellAt(pos.r, pos.c).input;
-        if (document.activeElement !== input && !opts.noFocus) {
-            input.focus({ preventScroll: true });
-        }
         refreshHighlight();
+        positionKeyboard();
     }
 
     function toggleOrientation() {
@@ -189,36 +222,44 @@
         }
     }
 
+    function goToClue(cl, o) {
+        orientation = o;
+        const word = wordCells(cl.row, cl.col, o);
+        setCurrent(word.find(cell => cell.value === '') || word[0]);
+    }
+
+    function currentIndex() {
+        const word = wordCells(current.r, current.c, orientation);
+        return { word, idx: word.findIndex(cell => cell.r === current.r && cell.c === current.c) };
+    }
+
     // Move to the next empty cell in the current word after the current cell,
     // otherwise to the first empty cell of the next unfinished clue
     function advance() {
-        const word = wordCells(current.r, current.c, orientation);
-        const idx = word.findIndex(p => p.r === current.r && p.c === current.c);
-        const later = word.slice(idx + 1).find(p => cellAt(p.r, p.c).input.value === '');
+        const { word, idx } = currentIndex();
+        const later = word.slice(idx + 1).find(cell => cell.value === '');
         if (later) { setCurrent(later); return; }
         if (idx + 1 < word.length) { setCurrent(word[idx + 1]); return; }
-        nextClue();
+        nextClue(1, true);
     }
 
-    function nextClue() {
+    // Step to the next (dir = 1) or previous (dir = -1) clue. With onlyUnfinished,
+    // skip clues that are already fully filled.
+    function nextClue(dir, onlyUnfinished) {
         const list = orderedClues();
         const cl = clueFor(current.r, current.c, orientation);
         const start = list.findIndex(item => item.cl === cl && item.o === orientation);
         for (let i = 1; i <= list.length; i++) {
-            const item = list[(start + i) % list.length];
-            const empty = wordCells(item.cl.row, item.cl.col, item.o).find(p => cellAt(p.r, p.c).input.value === '');
-            if (empty) {
-                orientation = item.o;
-                setCurrent(empty);
-                return;
-            }
+            const item = list[((start + dir * i) % list.length + list.length) % list.length];
+            if (onlyUnfinished && isClueComplete(item.cl, item.o)) continue;
+            goToClue(item.cl, item.o);
+            return;
         }
         // Everything is filled: stay put
     }
 
     function retreat() {
-        const word = wordCells(current.r, current.c, orientation);
-        const idx = word.findIndex(p => p.r === current.r && p.c === current.c);
+        const { word, idx } = currentIndex();
         if (idx > 0) setCurrent(word[idx - 1]);
     }
 
@@ -232,81 +273,60 @@
         }
         let r = current.r + dr, c = current.c + dc;
         while (r >= 0 && c >= 0 && r < puzzle.rows && c < puzzle.columns) {
-            if (cellAt(r, c)) { setCurrent({ r, c }); return; }
+            if (cellAt(r, c)) { setCurrent(cellAt(r, c)); return; }
             r += dr; c += dc;
         }
     }
 
-    // --- Cell events ----------------------------------------------------------------
-
-    function bindCell(cell) {
-        const { input } = cell;
-
-        input.addEventListener('focus', () => {
-            if (!current || current.r !== cell.r || current.c !== cell.c) {
-                setCurrent({ r: cell.r, c: cell.c }, { noFocus: true });
-            }
-        });
-
-        // Clicking the already selected cell toggles direction
-        input.addEventListener('mousedown', e => {
-            if (document.activeElement === input) {
-                e.preventDefault();
-                toggleOrientation();
-            }
-        });
-
-        input.addEventListener('keydown', e => {
-            if (solved && !['Tab'].includes(e.key)) { e.preventDefault(); return; }
-            switch (e.key) {
-                case 'ArrowRight': arrow(0, 1); break;
-                case 'ArrowLeft': arrow(0, -1); break;
-                case 'ArrowDown': arrow(1, 0); break;
-                case 'ArrowUp': arrow(-1, 0); break;
-                case 'Enter':
-                case ' ': toggleOrientation(); break;
-                case 'Backspace':
-                    if (input.value === '') {
-                        retreat();
-                        cellAt(current.r, current.c).input.value = '';
-                        markDirty(cellAt(current.r, current.c));
-                    } else {
-                        input.value = '';
-                        markDirty(cell);
-                    }
-                    afterEdit();
-                    break;
-                case 'Delete':
-                    input.value = '';
-                    markDirty(cell);
-                    afterEdit();
-                    break;
-                default:
-                    if (!/^[a-z]$/i.test(e.key) || e.ctrlKey || e.metaKey || e.altKey) {
-                        return; // leave Tab and shortcuts to the browser
-                    }
-                    input.value = e.key.toUpperCase();
-                    markDirty(cell);
-                    afterEdit();
-                    advance();
-            }
-            e.preventDefault();
-        });
-
-        // Fallback for on-screen keyboards that only fire input events
-        input.addEventListener('input', () => {
-            if (solved) { input.value = ''; return; }
-            const v = input.value.replace(/[^a-z]/gi, '').toUpperCase().slice(-1);
-            input.value = v;
-            markDirty(cell);
-            afterEdit();
-            if (v) advance();
-        });
+    function typeLetter(letter) {
+        if (solved || !current) return;
+        setValue(cellAt(current.r, current.c), letter.toUpperCase());
+        afterEdit();
+        advance();
     }
 
-    function markDirty(cell) {
-        cell.td.classList.remove('correct', 'incorrect');
+    function backspace() {
+        if (solved || !current) return;
+        const cell = cellAt(current.r, current.c);
+        if (cell.value === '') {
+            retreat();
+            setValue(cellAt(current.r, current.c), '');
+        } else {
+            setValue(cell, '');
+        }
+        afterEdit();
     }
+
+    kbd.addEventListener('keydown', e => {
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        switch (e.key) {
+            case 'ArrowRight': arrow(0, 1); break;
+            case 'ArrowLeft': arrow(0, -1); break;
+            case 'ArrowDown': arrow(1, 0); break;
+            case 'ArrowUp': arrow(-1, 0); break;
+            case 'Enter':
+            case ' ': toggleOrientation(); break;
+            case 'Backspace': backspace(); break;
+            case 'Delete':
+                if (!solved && current) { setValue(cellAt(current.r, current.c), ''); afterEdit(); }
+                break;
+            default:
+                if (/^[a-z]$/i.test(e.key)) { typeLetter(e.key); break; }
+                return; // Tab, software-keyboard keys and everything else: leave to the browser
+        }
+        e.preventDefault();
+    });
+
+    // Software keyboards often report no usable key on keydown and only fire input.
+    // Take whatever landed in the hidden input and clear it.
+    kbd.addEventListener('input', () => {
+        const v = kbd.value;
+        kbd.value = '';
+        const m = v.match(/[a-z]/gi);
+        if (m) typeLetter(m[m.length - 1]);
+    });
+
+    // --- Editing side effects -------------------------------------------------------
 
     function afterEdit() {
         refreshClueDone();
@@ -319,25 +339,23 @@
 
     function mark(cell) {
         cell.td.classList.remove('correct', 'incorrect');
-        if (cell.input.value === '') return;
-        cell.td.classList.add(cell.input.value === cell.letter ? 'correct' : 'incorrect');
+        if (cell.value === '') return;
+        cell.td.classList.add(cell.value === cell.letter ? 'correct' : 'incorrect');
     }
 
     function reveal(cell) {
-        cell.input.value = cell.letter;
-        cell.td.classList.remove('incorrect');
+        setValue(cell, cell.letter);
         cell.td.classList.add('correct', 'revealed');
     }
 
     function checkSolved() {
-        const all = cells.flat().filter(Boolean);
-        if (!all.every(cell => cell.input.value === cell.letter)) return;
-        if (solved) return;
+        const all = allCells();
+        if (solved || !all.every(cell => cell.value === cell.letter)) return;
         solved = true;
         stopTimer();
         bannerEl.textContent = `Solved in ${formatTime(elapsed)}. Nice work.`;
         bannerEl.classList.add('show');
-        all.forEach(cell => { cell.input.readOnly = true; cell.td.classList.add('correct'); });
+        all.forEach(cell => cell.td.classList.add('correct'));
         saveState();
     }
 
@@ -366,42 +384,41 @@
 
     // --- Buttons ---------------------------------------------------------------------
 
-    // After any button, hand focus back to the grid so typing keeps working
-    function refocus() {
-        if (current) cellAt(current.r, current.c).input.focus({ preventScroll: true });
+    function onButton(id, handler) {
+        document.getElementById(id).addEventListener('click', () => {
+            handler();
+            focusKeyboard();
+        });
     }
-    document.querySelectorAll('.controls button').forEach(btn => btn.addEventListener('click', () => setTimeout(refocus, 0)));
 
-    document.getElementById('check-word').addEventListener('click', () => {
-        if (!current) return;
-        wordCells(current.r, current.c, orientation).forEach(p => mark(cellAt(p.r, p.c)));
+    onButton('prev-word', () => nextClue(-1, false));
+    onButton('next-word', () => nextClue(1, false));
+
+    onButton('check-word', () => {
+        if (current) wordCells(current.r, current.c, orientation).forEach(mark);
     });
 
-    document.getElementById('check-all').addEventListener('click', () => {
-        cells.flat().forEach(cell => { if (cell) mark(cell); });
-    });
+    onButton('check-all', () => allCells().forEach(mark));
 
-    document.getElementById('reveal-letter').addEventListener('click', () => {
+    onButton('reveal-letter', () => {
         if (!current || solved) return;
         reveal(cellAt(current.r, current.c));
         afterEdit();
         if (!solved) advance();
     });
 
-    document.getElementById('reveal-word').addEventListener('click', () => {
+    onButton('reveal-word', () => {
         if (!current || solved) return;
-        wordCells(current.r, current.c, orientation).forEach(p => reveal(cellAt(p.r, p.c)));
+        wordCells(current.r, current.c, orientation).forEach(reveal);
         afterEdit();
-        if (!solved) nextClue();
+        if (!solved) nextClue(1, true);
     });
 
-    document.getElementById('reset-puzzle').addEventListener('click', () => {
+    onButton('reset-puzzle', () => {
         if (!confirm('Clear all your entries and restart the timer?')) return;
-        cells.flat().forEach(cell => {
-            if (!cell) return;
-            cell.input.value = '';
-            cell.input.readOnly = false;
-            cell.td.classList.remove('correct', 'incorrect', 'revealed');
+        allCells().forEach(cell => {
+            setValue(cell, '');
+            cell.td.classList.remove('revealed');
         });
         solved = false;
         elapsed = 0;
@@ -410,9 +427,8 @@
         stopTimer();
         startTimer();
         afterEdit();
-        orientation = ACROSS;
         const first = clues[ACROSS][0] || clues[DOWN][0];
-        if (first) setCurrent({ r: first.row, c: first.col });
+        if (first) goToClue(first, clues[ACROSS][0] ? ACROSS : DOWN);
     });
 
     document.getElementById('new-puzzle').addEventListener('click', () => {
@@ -422,6 +438,8 @@
         window.location.search = params.toString();
     });
 
+    window.addEventListener('resize', positionKeyboard);
+
     // --- Boot ------------------------------------------------------------------------
 
     buildGrid();
@@ -429,11 +447,10 @@
 
     const saved = loadState();
     if (saved && Array.isArray(saved.entries)) {
-        cells.forEach((row, r) => row.forEach((cell, c) => {
-            if (cell && saved.entries[r] && typeof saved.entries[r][c] === 'string') {
-                cell.input.value = saved.entries[r][c];
-            }
-        }));
+        allCells().forEach(cell => {
+            const v = saved.entries[cell.r] && saved.entries[cell.r][cell.c];
+            if (typeof v === 'string' && /^[A-Z]?$/.test(v)) setValue(cell, v);
+        });
         elapsed = Number(saved.elapsed) || 0;
         timerEl.textContent = formatTime(elapsed);
     }
@@ -445,7 +462,10 @@
 
     const firstClue = clues[ACROSS][0] || clues[DOWN][0];
     if (firstClue) {
-        orientation = clues[ACROSS][0] ? ACROSS : DOWN;
-        setCurrent({ r: firstClue.row, c: firstClue.col });
+        goToClue(firstClue, clues[ACROSS][0] ? ACROSS : DOWN);
+    }
+    // Do not steal focus on load on touch devices: that would pop the keyboard immediately
+    if (!window.matchMedia('(pointer: coarse)').matches) {
+        focusKeyboard();
     }
 })();
