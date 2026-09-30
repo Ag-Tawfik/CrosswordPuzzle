@@ -1,39 +1,87 @@
 {
   "name": "Food & Drink",
   "words": {
-    "BREAD": "Loaf baked from flour",
-    "CHEESE": "Milk product aged in wheels",
-    "APPLE": "Fruit that keeps the doctor away",
-    "PIZZA": "Italian pie with toppings",
-    "RICE": "Staple grain of Asia",
+    "BREAD": [
+      "Loaf baked from flour",
+      "It comes in loaves and slices"
+    ],
+    "CHEESE": [
+      "Milk product aged in wheels",
+      "Say this for a photo"
+    ],
+    "APPLE": [
+      "Fruit that keeps the doctor away",
+      "Fruit that fell on Newton"
+    ],
+    "PIZZA": [
+      "Italian pie with toppings",
+      "Round dish sold by the slice"
+    ],
+    "RICE": [
+      "Staple grain of Asia",
+      "Grain often served with curry"
+    ],
     "PASTA": "Spaghetti or penne",
     "SOUP": "Hot bowl of broth",
-    "EGG": "Breakfast item from a hen",
-    "BANANA": "Yellow fruit monkeys love",
+    "EGG": [
+      "Breakfast item from a hen",
+      "It has a yolk and a shell"
+    ],
+    "BANANA": [
+      "Yellow fruit monkeys love",
+      "Curved yellow fruit"
+    ],
     "ORANGE": "Citrus fruit that is also a colour",
-    "LEMON": "Sour yellow citrus",
+    "LEMON": [
+      "Sour yellow citrus",
+      "Citrus that makes you pucker"
+    ],
     "GRAPE": "Fruit made into wine",
     "MANGO": "Tropical stone fruit",
-    "HONEY": "Sweet stuff bees make",
+    "HONEY": [
+      "Sweet stuff bees make",
+      "Golden sweetener from a hive"
+    ],
     "SUGAR": "Sweet white crystals",
     "SALT": "Seasoning from the sea",
     "PEPPER": "Salt's partner on the table",
     "BUTTER": "Spread churned from cream",
-    "CAKE": "Birthday dessert with candles",
+    "CAKE": [
+      "Birthday dessert with candles",
+      "Sweet treat with layers and icing"
+    ],
     "COOKIE": "Chocolate chip treat",
     "CHOCOLATE": "Cocoa-based sweet",
-    "TOMATO": "Red fruit in ketchup",
-    "POTATO": "Spud",
-    "ONION": "Vegetable that makes you cry",
-    "CARROT": "Orange root rabbits love",
+    "TOMATO": [
+      "Red fruit in ketchup",
+      "Fruit often mistaken for a vegetable"
+    ],
+    "POTATO": [
+      "Spud",
+      "Vegetable for chips and mash"
+    ],
+    "ONION": [
+      "Vegetable that makes you cry",
+      "Layered vegetable"
+    ],
+    "CARROT": [
+      "Orange root rabbits love",
+      "Bugs Bunny's favourite"
+    ],
     "GARLIC": "Pungent bulb vampires hate",
     "STEAK": "Cut of beef",
     "CHICKEN": "Most common poultry",
     "TACO": "Folded Mexican tortilla dish",
     "SUSHI": "Japanese dish with raw fish",
     "NOODLE": "Long strand in ramen",
-    "COFFEE": "Morning caffeine drink",
-    "TEA": "Leaves steeped in hot water",
+    "COFFEE": [
+      "Morning caffeine drink",
+      "Espresso or latte"
+    ],
+    "TEA": [
+      "Leaves steeped in hot water",
+      "Britain's favourite hot drink"
+    ],
     "MILK": "White drink from cows"
   }
 }

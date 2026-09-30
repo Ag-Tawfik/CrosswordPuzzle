@@ -183,7 +183,61 @@ foreach (array_merge($arr['across'], $arr['down']) as $cl) {
     check($arr['cells'][$cl['row']][$cl['col']]['number'] === $cl['number'], 'clue number matches cell number');
 }
 
-// Rendering the page produces no warnings, and the JSON endpoint works
+// Multiple clues per word: choice is deterministic per seed and varies across seeds
+$animalsSet = loadWordSet('animals');
+check(count($animalsSet->clues['CAT']) >= 2, 'CAT has more than one clue');
+check($animalsSet->clueFor('CAT', 5) === $animalsSet->clueFor('CAT', 5), 'clue choice is stable for a seed');
+$variants = [];
+for ($i = 0; $i < 50; $i++) $variants[$animalsSet->clueFor('CAT', $i)] = true;
+check(count($variants) >= 2, 'clue choice varies across seeds');
+
+// Custom word sets from the URL
+$payload = rtrim(strtr(base64_encode(json_encode(['name' => 'Our <b>party</b>', 'words' => ['cake' => 'Sweet', 'PARIS' => ['Where we met', 'City'], 'otter' => 'Her favourite']])), '+/', '-_'), '=');
+$custom = customWordSetFromParam($payload);
+check($custom !== null && $custom->key === 'custom', 'custom set decodes');
+check($custom !== null && $custom->words() === ['CAKE', 'PARIS', 'OTTER'], 'custom words are normalised');
+check($custom !== null && $custom->name === 'Our <b>party</b>', 'custom name kept raw (escaped on output)');
+check(customWordSetFromParam('not base64!') === null, 'garbage custom payload rejected');
+check(customWordSetFromParam(rtrim(strtr(base64_encode('{"words":{"a1":"x"}}'), '+/', '-_'), '=')) === null, 'custom payload with invalid word rejected');
+check(customWordSetFromParam(rtrim(strtr(base64_encode('{"words":{}}'), '+/', '-_'), '=')) === null, 'custom payload with no words rejected');
+
+// A custom puzzle renders, escapes its name, and keeps a stable layout
+$_GET = ['custom' => $payload, 'size' => '10'];
+ob_start();
+try {
+    require __DIR__ . '/../index.php';
+    $html = ob_get_clean();
+    check(str_contains($html, 'Our &lt;b&gt;party&lt;/b&gt; Crossword'), 'custom puzzle name is escaped');
+    check(str_contains($html, '"custom":true'), 'custom flag in puzzle data');
+} catch (Throwable $e) {
+    ob_end_clean();
+    check(false, 'index.php (custom) raised: ' . $e->getMessage());
+}
+
+// A dated puzzle uses the date as its seed; a future date falls back to today
+$_GET = ['set' => 'animals', 'date' => '2026-01-15'];
+ob_start();
+try {
+    require __DIR__ . '/../index.php';
+    $html = ob_get_clean();
+    check(str_contains($html, '"seed":20260115'), 'date parameter becomes the seed');
+    check(str_contains($html, '"date":"2026-01-15"'), 'date carried in puzzle data');
+    check(str_contains($html, 'Daily puzzle for 15 January 2026'), 'dated subtitle');
+} catch (Throwable $e) {
+    ob_end_clean();
+    check(false, 'index.php (date) raised: ' . $e->getMessage());
+}
+$_GET = ['set' => 'animals', 'date' => '2999-01-01'];
+ob_start();
+try {
+    require __DIR__ . '/../index.php';
+    $html = ob_get_clean();
+    check(str_contains($html, '"daily":true'), 'future date falls back to today');
+} catch (Throwable $e) {
+    ob_end_clean();
+    check(false, 'index.php (future date) raised: ' . $e->getMessage());
+}
+
 $_GET = ['set' => 'food', 'size' => '12', 'seed' => '7'];
 ob_start();
 try {

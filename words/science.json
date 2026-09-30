@@ -1,0 +1,51 @@
+{
+  "name": "Science",
+  "words": {
+    "ATOM": [
+      "Smallest unit of an element",
+      "Building block of matter"
+    ],
+    "CELL": [
+      "Smallest unit of life",
+      "Basic unit of living things"
+    ],
+    "GRAVITY": "Force that keeps your feet on the ground",
+    "ENERGY": "Capacity to do work",
+    "OXYGEN": "Gas we breathe to live",
+    "HYDROGEN": "Lightest element",
+    "CARBON": "Element in diamonds and coal",
+    "IRON": "Metal that rusts",
+    "GOLD": "Precious yellow metal, symbol Au",
+    "PLANET": "Earth or Mars, for example",
+    "ORBIT": "Path of a planet around the sun",
+    "MOON": "Earth's natural satellite",
+    "COMET": "Icy visitor with a tail",
+    "GALAXY": "The Milky Way is one",
+    "MAGNET": "It attracts iron",
+    "VOLCANO": "Mountain that erupts lava",
+    "FOSSIL": "Ancient remains preserved in rock",
+    "DNA": "Molecule that carries genes",
+    "GENE": "Unit of heredity",
+    "VIRUS": "Tiny agent that causes flu or colds",
+    "BACTERIA": "Single-celled microbes",
+    "NEURON": "Nerve cell",
+    "BRAIN": "Organ that does your thinking",
+    "HEART": "Organ that pumps blood",
+    "LUNG": "Organ for breathing",
+    "SKELETON": "All your bones together",
+    "MOLECULE": "Two or more atoms bonded",
+    "ACID": "Lemon juice is a weak one",
+    "LASER": "Concentrated beam of light",
+    "ROBOT": "Machine that works on its own",
+    "ROCKET": "Vehicle launched into space",
+    "TELESCOPE": "Instrument for viewing the stars",
+    "MICROSCOPE": "Instrument for viewing the tiny",
+    "ECLIPSE": "When the moon blocks the sun",
+    "CLIMATE": "Long-term weather pattern",
+    "EVOLUTION": "Darwin's theory",
+    "ELECTRON": "Negatively charged particle",
+    "PROTON": "Positively charged particle",
+    "PHOTON": "Particle of light",
+    "ALGEBRA": "Maths with x and y"
+  }
+}

@@ -1,40 +1,106 @@
 {
   "name": "Animals",
   "words": {
-    "CAT": "Purring house pet",
-    "DOG": "Loyal companion that barks",
+    "CAT": [
+      "Purring house pet",
+      "Whiskered animal with nine lives, they say"
+    ],
+    "DOG": [
+      "Loyal companion that barks",
+      "Animal that fetches and wags"
+    ],
     "MOUSE": "Cheese-loving rodent",
     "FISH": "It breathes through gills",
     "BIRD": "Feathered flyer",
-    "LION": "King of the savanna",
-    "TIGER": "Striped big cat",
-    "BEAR": "Hibernating honey lover",
-    "MONKEY": "Banana-eating primate",
-    "COW": "Farm animal that moos",
-    "PIG": "Farm animal that oinks",
-    "SHEEP": "Woolly farm animal",
-    "HORSE": "Animal you ride with a saddle",
+    "LION": [
+      "King of the savanna",
+      "Big cat with a mane"
+    ],
+    "TIGER": [
+      "Striped big cat",
+      "Largest of the big cats"
+    ],
+    "BEAR": [
+      "Hibernating honey lover",
+      "Grizzly or polar, for example"
+    ],
+    "MONKEY": [
+      "Banana-eating primate",
+      "Animal that swings through trees"
+    ],
+    "COW": [
+      "Farm animal that moos",
+      "Source of beef and milk"
+    ],
+    "PIG": [
+      "Farm animal that oinks",
+      "Source of bacon"
+    ],
+    "SHEEP": [
+      "Woolly farm animal",
+      "Source of wool"
+    ],
+    "HORSE": [
+      "Animal you ride with a saddle",
+      "Animal that gallops"
+    ],
     "GOAT": "Bearded farm climber",
-    "DUCK": "Quacking pond bird",
-    "FROG": "Croaking pond hopper",
-    "SNAKE": "Legless reptile",
+    "DUCK": [
+      "Quacking pond bird",
+      "Bird that waddles"
+    ],
+    "FROG": [
+      "Croaking pond hopper",
+      "Tadpole, grown up"
+    ],
+    "SNAKE": [
+      "Legless reptile",
+      "It slithers and hisses"
+    ],
     "EAGLE": "National bird of the USA",
-    "SHARK": "Ocean predator with rows of teeth",
-    "WHALE": "Largest animal on Earth",
-    "ZEBRA": "Striped African grazer",
-    "CAMEL": "Desert animal with humps",
-    "RABBIT": "Long-eared hopper",
+    "SHARK": [
+      "Ocean predator with rows of teeth",
+      "Fish with a fin above the water"
+    ],
+    "WHALE": [
+      "Largest animal on Earth",
+      "Giant of the sea that sings"
+    ],
+    "ZEBRA": [
+      "Striped African grazer",
+      "Horse-like animal in black and white"
+    ],
+    "CAMEL": [
+      "Desert animal with humps",
+      "Ship of the desert"
+    ],
+    "RABBIT": [
+      "Long-eared hopper",
+      "Animal pulled from a magician's hat"
+    ],
     "DEER": "Bambi, for one",
-    "WOLF": "Howling pack hunter",
+    "WOLF": [
+      "Howling pack hunter",
+      "Animal that howls at the moon"
+    ],
     "FOX": "Cunning red-furred hunter",
-    "OWL": "Nocturnal hooter",
+    "OWL": [
+      "Nocturnal hooter",
+      "Wise bird of the night"
+    ],
     "PANDA": "Bamboo-eating bear",
     "KOALA": "Eucalyptus-eating Australian",
     "OTTER": "Playful river swimmer",
     "GIRAFFE": "Tallest land animal",
-    "PENGUIN": "Tuxedoed flightless bird",
+    "PENGUIN": [
+      "Tuxedoed flightless bird",
+      "Bird that swims but cannot fly"
+    ],
     "TURTLE": "Reptile with a shell",
-    "BEE": "Honey maker",
+    "BEE": [
+      "Honey maker",
+      "Buzzing pollinator"
+    ],
     "ANT": "Six-legged colony builder"
   }
 }

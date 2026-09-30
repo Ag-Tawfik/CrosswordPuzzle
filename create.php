@@ -1,0 +1,65 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/crossword.php';
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Create a Crossword</title>
+    <link rel="stylesheet" href="crossword.css">
+</head>
+
+<body class="create-page">
+
+    <h1>Create your own crossword</h1>
+    <p class="subtitle">Enter one word per line as <code>WORD: clue</code>. The puzzle lives in the link, so there is nothing to save.</p>
+
+    <form id="create-form" class="create-form">
+        <label>
+            Title
+            <input type="text" id="title" maxlength="60" placeholder="Our wedding, Year 6 spelling, Grandad's 80th" required>
+        </label>
+
+        <label>
+            Words and clues
+            <textarea id="words" rows="14" required placeholder="CAKE: Sweet thing with candles&#10;PARIS: Where we met&#10;OTTER: Her favourite animal"></textarea>
+        </label>
+
+        <div class="row">
+            <label>
+                Grid size
+                <select id="size">
+                    <option value="10">10×10</option>
+                    <option value="12" selected>12×12</option>
+                    <option value="15">15×15</option>
+                    <option value="18">18×18</option>
+                    <option value="20">20×20</option>
+                </select>
+            </label>
+            <button type="submit" class="primary">Build puzzle</button>
+            <a class="button" href="index.php">Back to the daily puzzle</a>
+        </div>
+
+        <p id="create-error" class="banner warn" hidden></p>
+    </form>
+
+    <div id="create-result" hidden>
+        <p><b>Your puzzle link</b></p>
+        <input type="text" id="create-link" readonly>
+        <div class="row">
+            <button type="button" id="copy-link">Copy link</button>
+            <a class="button primary" id="open-link" href="#">Open puzzle</a>
+        </div>
+        <p class="muted">Words that do not fit are left out. Try a bigger grid or words that share more letters if too many are missing.</p>
+    </div>
+
+    <script src="create.js"></script>
+
+</body>
+
+</html>
