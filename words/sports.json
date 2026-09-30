@@ -1,0 +1,55 @@
+{
+  "name": "Sports",
+  "words": {
+    "SOCCER": [
+      "Game with a round ball and goalkeepers",
+      "The world's most popular game"
+    ],
+    "TENNIS": [
+      "Racket sport played at Wimbledon",
+      "Game with love and deuce"
+    ],
+    "GOLF": [
+      "Sport with birdies and bogeys",
+      "Game played on a course with 18 holes"
+    ],
+    "RUGBY": "Oval-ball game with scrums",
+    "CRICKET": "Bat-and-ball game with wickets",
+    "BOXING": "Fighting sport with gloves and rounds",
+    "HOCKEY": "Stick game played on ice or grass",
+    "SKIING": "Sliding down snowy slopes",
+    "SWIM": "Move through water",
+    "MARATHON": "Race of just over 26 miles",
+    "SPRINT": "Short, fast race",
+    "GOAL": [
+      "What a striker aims for",
+      "Point scored in soccer or hockey"
+    ],
+    "REFEREE": "Official who enforces the rules",
+    "COACH": "Person who trains the team",
+    "TEAM": "Group of players on the same side",
+    "MEDAL": "Gold, silver or bronze award",
+    "OLYMPICS": "Games held every four years",
+    "STADIUM": "Large arena for sports",
+    "RACKET": "What you swing in tennis",
+    "BAT": "Cricket or baseball hitter",
+    "PUCK": "Ice hockey disc",
+    "NET": "Where the ball goes for a goal",
+    "SERVE": "Start a point in tennis",
+    "TACKLE": "Bring an opponent down",
+    "PENALTY": "Kick awarded for a foul in the box",
+    "CHESS": "Board game with a king and queen",
+    "CYCLING": "Sport of the Tour de France",
+    "ROWING": "Oars are used in this sport",
+    "SURF": "Ride the waves on a board",
+    "JUDO": "Japanese martial art with throws",
+    "KARATE": "Martial art with belts and kicks",
+    "ARCHERY": "Sport with bows and arrows",
+    "FENCING": "Sword sport with a foil",
+    "TROPHY": "Cup lifted by the winners",
+    "CHAMPION": "The overall winner",
+    "LEAGUE": "Group of teams that play each other",
+    "DRAW": "Result when neither side wins",
+    "SPRINTER": "Usain Bolt, for one"
+  }
+}

@@ -1,34 +1,82 @@
 {
   "name": "Geography",
   "words": {
-    "PARIS": "Capital of France",
-    "LONDON": "Capital on the Thames",
-    "ROME": "Capital of Italy",
-    "TOKYO": "Capital of Japan",
+    "PARIS": [
+      "Capital of France",
+      "City of Light"
+    ],
+    "LONDON": [
+      "Capital on the Thames",
+      "Home of Big Ben"
+    ],
+    "ROME": [
+      "Capital of Italy",
+      "The Eternal City"
+    ],
+    "TOKYO": [
+      "Capital of Japan",
+      "World's largest metropolis"
+    ],
     "CAIRO": "Capital on the Nile",
-    "EGYPT": "Land of the pyramids",
-    "JAPAN": "Land of the rising sun",
-    "CHINA": "Home of the Great Wall",
-    "INDIA": "Home of the Taj Mahal",
-    "BRAZIL": "Largest South American country",
-    "CANADA": "Country with the maple leaf flag",
+    "EGYPT": [
+      "Land of the pyramids",
+      "Country of the Sphinx"
+    ],
+    "JAPAN": [
+      "Land of the rising sun",
+      "Country of sushi and samurai"
+    ],
+    "CHINA": [
+      "Home of the Great Wall",
+      "Most populous country in Asia"
+    ],
+    "INDIA": [
+      "Home of the Taj Mahal",
+      "Country of Bollywood"
+    ],
+    "BRAZIL": [
+      "Largest South American country",
+      "Home of the Amazon rainforest"
+    ],
+    "CANADA": [
+      "Country with the maple leaf flag",
+      "Second largest country by area"
+    ],
     "MEXICO": "Country south of the USA",
     "SPAIN": "Country of Madrid and Barcelona",
-    "ITALY": "Boot-shaped country",
-    "FRANCE": "Country of the Eiffel Tower",
+    "ITALY": [
+      "Boot-shaped country",
+      "Country of pizza and pasta"
+    ],
+    "FRANCE": [
+      "Country of the Eiffel Tower",
+      "Country of wine and cheese"
+    ],
     "GREECE": "Cradle of democracy",
     "RUSSIA": "Largest country by area",
     "KENYA": "East African safari nation",
     "PERU": "Home of Machu Picchu",
     "CHILE": "Long thin country on the Pacific",
     "CUBA": "Caribbean island nation",
-    "NILE": "Longest river in Africa",
+    "NILE": [
+      "Longest river in Africa",
+      "River of the pharaohs"
+    ],
     "AMAZON": "Largest river by volume",
     "ALPS": "European mountain range",
     "ANDES": "Longest mountain range",
-    "SAHARA": "Largest hot desert",
-    "EVEREST": "Highest mountain",
-    "PACIFIC": "Largest ocean",
+    "SAHARA": [
+      "Largest hot desert",
+      "Desert covering much of North Africa"
+    ],
+    "EVEREST": [
+      "Highest mountain",
+      "Peak on the Nepal and Tibet border"
+    ],
+    "PACIFIC": [
+      "Largest ocean",
+      "Ocean between Asia and America"
+    ],
     "ATLANTIC": "Ocean between Europe and America",
     "ASIA": "Largest continent",
     "AFRICA": "Continent of 54 countries",

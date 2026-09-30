@@ -2,6 +2,14 @@
 declare(strict_types=1);
 
 /**
+ * Escapes a value for output inside HTML
+ */
+function h(string|int $value): string
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+}
+
+/**
  * Represents a cell in the crossword puzzle grid
  */
 class PuzzleCell {
@@ -46,12 +54,22 @@ class PlacementResult {
  * A named collection of words and their clues, loaded from words/<name>.json
  */
 class WordSet {
-    /** @param array<string, string> $clues word => clue */
+    /** @param array<string, string[]> $clues word => one or more clues */
     public function __construct(public string $key, public string $name, public array $clues) {}
 
     /** @return string[] */
     public function words(): array {
         return array_keys($this->clues);
+    }
+
+    /**
+     * Picks one clue for a word. The choice depends only on the seed and the
+     * word, so a given puzzle always shows the same clue, while the same word
+     * in another puzzle may get a different one.
+     */
+    public function clueFor(string $word, int $seed): string {
+        $options = $this->clues[$word] ?? ['Definition for ' . strtolower($word)];
+        return $options[crc32($seed . ':' . $word) % count($options)];
     }
 }
 
@@ -87,20 +105,72 @@ function loadWordSet(string $key, string $directory = __DIR__ . '/words'): WordS
     }
 
     $data = json_decode((string) file_get_contents($file), true);
-    if (!is_array($data) || !isset($data['words']) || !is_array($data['words'])) {
+    if (!is_array($data)) {
+        throw new RuntimeException("Malformed word set: $key");
+    }
+
+    return wordSetFromArray($data, $key);
+}
+
+/**
+ * Builds a word set from decoded JSON: {"name": "...", "words": {"WORD": "clue" | ["clue", ...]}}.
+ * Used for the shipped sets and for custom puzzles supplied in the URL.
+ *
+ * @param array<string, mixed> $data
+ */
+function wordSetFromArray(array $data, string $key): WordSet
+{
+    if (!isset($data['words']) || !is_array($data['words'])) {
         throw new RuntimeException("Malformed word set: $key");
     }
 
     $clues = [];
     foreach ($data['words'] as $word => $clue) {
         $normalised = normaliseWords([(string) $word]);
-        if ($normalised === [] || !is_string($clue) || trim($clue) === '') {
+        $options = is_array($clue) ? $clue : [$clue];
+        $options = array_values(array_filter(array_map(
+            fn($c) => is_string($c) ? trim($c) : '',
+            $options
+        ), fn(string $c) => $c !== ''));
+        if ($normalised === [] || $options === []) {
             throw new RuntimeException("Malformed entry '$word' in word set: $key");
         }
-        $clues[$normalised[0]] = trim($clue);
+        $clues[$normalised[0]] = $options;
     }
 
-    return new WordSet($key, (string) ($data['name'] ?? $key), $clues);
+    if ($clues === []) {
+        throw new RuntimeException("Word set has no words: $key");
+    }
+
+    $name = isset($data['name']) && is_string($data['name']) && trim($data['name']) !== ''
+        ? trim($data['name'])
+        : $key;
+
+    return new WordSet($key, mb_substr($name, 0, 60), $clues);
+}
+
+/**
+ * Decodes a custom puzzle passed in the URL as base64url-encoded JSON.
+ * Returns null when the payload is missing or unusable.
+ */
+function customWordSetFromParam(string $encoded): ?WordSet
+{
+    if ($encoded === '' || strlen($encoded) > 8000) {
+        return null;
+    }
+    $json = base64_decode(strtr($encoded, '-_', '+/'), true);
+    if ($json === false) {
+        return null;
+    }
+    $data = json_decode($json, true);
+    if (!is_array($data)) {
+        return null;
+    }
+    try {
+        return wordSetFromArray($data, 'custom');
+    } catch (RuntimeException $e) {
+        return null;
+    }
 }
 
 /**
@@ -404,7 +474,7 @@ function numberGrid(array &$puzzleGrid, array $placedWords): void
  * @param PuzzleCell[][] $puzzleGrid
  * @return array<string, mixed>
  */
-function puzzleToArray(array $puzzleGrid, PlacementResult $result, WordSet $wordSet): array
+function puzzleToArray(array $puzzleGrid, PlacementResult $result, WordSet $wordSet, int $seed = 0): array
 {
     $cells = [];
     foreach ($puzzleGrid as $row) {
@@ -421,7 +491,7 @@ function puzzleToArray(array $puzzleGrid, PlacementResult $result, WordSet $word
             'row' => $word->startRow,
             'col' => $word->startColumn,
             'length' => strlen($word->word),
-            'clue' => $wordSet->clues[$word->word] ?? 'Definition for ' . strtolower($word->word),
+            'clue' => $wordSet->clueFor($word->word, $seed),
         ];
     }
     foreach ($clues as &$list) {

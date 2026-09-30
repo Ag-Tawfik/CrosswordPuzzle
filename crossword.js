@@ -6,6 +6,9 @@
 
     const puzzle = JSON.parse(document.getElementById('puzzle-data').textContent);
     const storageKey = `crossword:${puzzle.set}:${puzzle.rows}:${puzzle.seed}`;
+    const STATS_KEY = 'crossword:stats';
+    const MODE_KEY = 'crossword:mode';
+    const THEME_KEY = 'crossword:theme';
 
     const gridEl = document.getElementById('crossword-grid');
     const kbd = document.getElementById('kbd');
@@ -13,36 +16,47 @@
     const timerEl = document.getElementById('timer');
     const progressEl = document.getElementById('progress');
     const bannerEl = document.getElementById('win-banner');
+    const winTextEl = document.getElementById('win-text');
+    const modeEl = document.getElementById('mode');
+    const pencilButton = document.getElementById('pencil');
     const clueLists = { [ACROSS]: document.getElementById('across-clues'), [DOWN]: document.getElementById('down-clues') };
 
     // --- State ----------------------------------------------------------------
 
-    const cells = [];          // cells[r][c] = { td, letterEl, value, letter, number, r, c } or null
+    const cells = [];          // cells[r][c] = { td, letterEl, value, pencil, letter, number, r, c } or null
     const clues = { [ACROSS]: puzzle.across, [DOWN]: puzzle.down };
     let current = null;        // { r, c }
     let orientation = ACROSS;
     let elapsed = 0;           // seconds
+    let reveals = 0;           // letters revealed, for the record
     let solved = false;
+    let pencilMode = false;
+    let mode = 'normal';
     let timerHandle = null;
 
-    // --- Persistence ------------------------------------------------------------
+    // --- Storage helpers ----------------------------------------------------------
 
-    function loadState() {
+    function readJson(key) {
         try {
-            const raw = localStorage.getItem(storageKey);
+            const raw = localStorage.getItem(key);
             return raw ? JSON.parse(raw) : null;
         } catch (e) {
             return null;
         }
     }
 
-    function saveState() {
+    function writeJson(key, value) {
         try {
-            const entries = cells.map(row => row.map(cell => cell ? cell.value : null));
-            localStorage.setItem(storageKey, JSON.stringify({ entries, elapsed, solved }));
+            localStorage.setItem(key, JSON.stringify(value));
         } catch (e) {
             // Storage unavailable (private mode, quota); the game still works without it
         }
+    }
+
+    // Pencil letters are stored lowercase so the saved shape stays a plain string per cell
+    function saveState() {
+        const entries = cells.map(row => row.map(cell => cell ? (cell.pencil ? cell.value.toLowerCase() : cell.value) : null));
+        writeJson(storageKey, { entries, elapsed, reveals, solved });
     }
 
     // --- Grid helpers -------------------------------------------------------------
@@ -85,10 +99,15 @@
         return wordCells(cl.row, cl.col, o).every(cell => cell.value !== '');
     }
 
-    function setValue(cell, value) {
+    function setValue(cell, value, pencil = false) {
         cell.value = value;
+        cell.pencil = pencil && value !== '';
         cell.letterEl.textContent = value;
+        cell.td.classList.toggle('pencil', cell.pencil);
         cell.td.classList.remove('correct', 'incorrect');
+        if (mode === 'easy' && value !== '' && value !== cell.letter) {
+            cell.td.classList.add('incorrect');
+        }
     }
 
     // --- Rendering ----------------------------------------------------------------
@@ -107,6 +126,7 @@
                     td.className = 'white';
                     td.dataset.row = r;
                     td.dataset.col = c;
+                    td.dataset.answer = data.letter; // used by the printed answer key
                     td.setAttribute('role', 'gridcell');
                     td.setAttribute('aria-label', `Row ${r + 1} column ${c + 1}`);
                     if (data.number !== null) {
@@ -118,7 +138,7 @@
                     const letterEl = document.createElement('span');
                     letterEl.className = 'letter';
                     td.appendChild(letterEl);
-                    const cell = { td, letterEl, value: '', letter: data.letter, number: data.number, r, c };
+                    const cell = { td, letterEl, value: '', pencil: false, letter: data.letter, number: data.number, r, c };
                     cells[r][c] = cell;
                     td.addEventListener('pointerdown', e => {
                         e.preventDefault(); // keep focus on the keyboard input
@@ -280,7 +300,7 @@
 
     function typeLetter(letter) {
         if (solved || !current) return;
-        setValue(cellAt(current.r, current.c), letter.toUpperCase());
+        setValue(cellAt(current.r, current.c), letter.toUpperCase(), pencilMode);
         afterEdit();
         advance();
     }
@@ -310,6 +330,7 @@
             case 'Delete':
                 if (!solved && current) { setValue(cellAt(current.r, current.c), ''); afterEdit(); }
                 break;
+            case '.': togglePencil(); break;
             default:
                 if (/^[a-z]$/i.test(e.key)) { typeLetter(e.key); break; }
                 return; // Tab, software-keyboard keys and everything else: leave to the browser
@@ -344,6 +365,7 @@
     }
 
     function reveal(cell) {
+        if (cell.value !== cell.letter) reveals++;
         setValue(cell, cell.letter);
         cell.td.classList.add('correct', 'revealed');
     }
@@ -353,11 +375,127 @@
         if (solved || !all.every(cell => cell.value === cell.letter)) return;
         solved = true;
         stopTimer();
-        bannerEl.textContent = `Solved in ${formatTime(elapsed)}. Nice work.`;
-        bannerEl.classList.add('show');
         all.forEach(cell => cell.td.classList.add('correct'));
+        const record = recordSolve();
+        showWin(record);
         saveState();
     }
+
+    function showWin(record) {
+        let text = `Solved in ${formatTime(elapsed)}`;
+        if (reveals > 0) text += ` with ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
+        if (record && record.streak > 1) text += `. Streak: ${record.streak} days`;
+        if (record && record.isBest) text += '. New best time';
+        winTextEl.textContent = text + '.';
+        bannerEl.classList.add('show');
+    }
+
+    // --- Stats and streaks ------------------------------------------------------------
+
+    function todayUtc() {
+        return new Date().toISOString().slice(0, 10);
+    }
+
+    function previousDay(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - 1);
+        return d.toISOString().slice(0, 10);
+    }
+
+    function loadStats() {
+        const s = readJson(STATS_KEY) || {};
+        return {
+            solved: s.solved || 0,
+            totalTime: s.totalTime || 0,
+            best: s.best || null,
+            streak: s.streak || 0,
+            lastDaily: s.lastDaily || null,
+            history: Array.isArray(s.history) ? s.history : [],
+        };
+    }
+
+    // Called once per solved puzzle. Returns the streak after this solve and
+    // whether this was a best time, or null if this solve was already recorded.
+    function recordSolve() {
+        const stats = loadStats();
+        const id = storageKey;
+        if (stats.history.some(h => h.id === id)) return null;
+
+        const today = todayUtc();
+        if (puzzle.daily && puzzle.date === today) {
+            if (stats.lastDaily === previousDay(today)) stats.streak += 1;
+            else if (stats.lastDaily !== today) stats.streak = 1;
+            stats.lastDaily = today;
+        }
+
+        const isBest = stats.best === null || elapsed < stats.best;
+        stats.solved += 1;
+        stats.totalTime += elapsed;
+        if (isBest) stats.best = elapsed;
+        stats.history.unshift({ id, when: today, set: puzzle.setName, seed: puzzle.seed, size: puzzle.rows, time: elapsed, reveals });
+        stats.history = stats.history.slice(0, 50);
+        writeJson(STATS_KEY, stats);
+        refreshStreak();
+        return { streak: stats.streak, isBest };
+    }
+
+    function currentStreak(stats) {
+        // A streak survives until the end of the day after the last daily solve
+        const today = todayUtc();
+        if (stats.lastDaily === today || stats.lastDaily === previousDay(today)) return stats.streak;
+        return 0;
+    }
+
+    function refreshStreak() {
+        const streak = currentStreak(loadStats());
+        document.getElementById('streak').textContent = streak;
+        document.getElementById('streak-status').hidden = streak === 0;
+    }
+
+    function showStats() {
+        const stats = loadStats();
+        const list = document.getElementById('stats-list');
+        const rows = [
+            ['Puzzles solved', stats.solved],
+            ['Current streak', currentStreak(stats) + (currentStreak(stats) === 1 ? ' day' : ' days')],
+            ['Best time', stats.best === null ? '–' : formatTime(stats.best)],
+            ['Average time', stats.solved ? formatTime(Math.round(stats.totalTime / stats.solved)) : '–'],
+        ];
+        list.innerHTML = rows.map(([k, v]) => `<dt>${escapeHtml(String(k))}</dt><dd>${escapeHtml(String(v))}</dd>`).join('');
+        if (stats.history.length) {
+            const items = stats.history.slice(0, 10).map(h =>
+                `<li><span>${escapeHtml(h.when)} · ${escapeHtml(h.set)} · ${h.size}×${h.size}</span><span>${formatTime(h.time)}${h.reveals ? ' *' : ''}</span></li>`
+            ).join('');
+            list.insertAdjacentHTML('afterend', `<h3 class="recent">Recent</h3><ul class="recent">${items}</ul>`);
+        }
+        document.getElementById('stats-dialog').showModal();
+    }
+
+    document.getElementById('stats-button').addEventListener('click', () => {
+        document.querySelectorAll('#stats-dialog .recent').forEach(el => el.remove());
+        showStats();
+    });
+
+    // --- Share ----------------------------------------------------------------------
+
+    document.getElementById('share-button').addEventListener('click', async () => {
+        const label = puzzle.date ? `for ${puzzle.date}` : `#${puzzle.seed}`;
+        let text = `${puzzle.setName} Crossword ${label} (${puzzle.rows}×${puzzle.rows})\nSolved in ${formatTime(elapsed)}`;
+        if (reveals > 0) text += ` with ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
+        text += `\n${window.location.href}`;
+        const button = document.getElementById('share-button');
+        const touch = window.matchMedia('(pointer: coarse)').matches;
+        try {
+            if (touch && navigator.share) {
+                await navigator.share({ text });
+            } else {
+                await navigator.clipboard.writeText(text);
+                button.textContent = 'Copied';
+            }
+        } catch (e) {
+            window.prompt('Copy your result:', text);
+        }
+    });
 
     // --- Timer ----------------------------------------------------------------------
 
@@ -382,6 +520,45 @@
         timerHandle = null;
     }
 
+    // --- Modes, pencil, theme ---------------------------------------------------------
+
+    function applyMode(value) {
+        mode = ['easy', 'normal', 'hard'].includes(value) ? value : 'normal';
+        modeEl.value = mode;
+        document.body.classList.remove('mode-easy', 'mode-normal', 'mode-hard');
+        document.body.classList.add('mode-' + mode);
+        // Re-evaluate the immediate feedback that easy mode gives
+        allCells().forEach(cell => {
+            cell.td.classList.remove('incorrect');
+            if (mode === 'easy' && cell.value !== '' && cell.value !== cell.letter) cell.td.classList.add('incorrect');
+        });
+        try { localStorage.setItem(MODE_KEY, mode); } catch (e) { /* ignore */ }
+    }
+
+    modeEl.addEventListener('change', () => { applyMode(modeEl.value); focusKeyboard(); });
+
+    function togglePencil() {
+        pencilMode = !pencilMode;
+        pencilButton.setAttribute('aria-pressed', String(pencilMode));
+    }
+
+    function applyTheme(theme) {
+        if (theme === 'dark' || theme === 'light') {
+            document.documentElement.dataset.theme = theme;
+        } else {
+            delete document.documentElement.dataset.theme;
+        }
+        const dark = theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.getElementById('theme-button').textContent = dark ? 'Light' : 'Dark';
+    }
+
+    document.getElementById('theme-button').addEventListener('click', () => {
+        const dark = document.getElementById('theme-button').textContent === 'Light';
+        const next = dark ? 'light' : 'dark';
+        try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* ignore */ }
+        applyTheme(next);
+    });
+
     // --- Buttons ---------------------------------------------------------------------
 
     function onButton(id, handler) {
@@ -393,6 +570,7 @@
 
     onButton('prev-word', () => nextClue(-1, false));
     onButton('next-word', () => nextClue(1, false));
+    onButton('pencil', togglePencil);
 
     onButton('check-word', () => {
         if (current) wordCells(current.r, current.c, orientation).forEach(mark);
@@ -418,10 +596,11 @@
         if (!confirm('Clear all your entries and restart the timer?')) return;
         allCells().forEach(cell => {
             setValue(cell, '');
-            cell.td.classList.remove('revealed');
+            cell.td.classList.remove('revealed', 'correct');
         });
         solved = false;
         elapsed = 0;
+        reveals = 0;
         timerEl.textContent = formatTime(0);
         bannerEl.classList.remove('show');
         stopTimer();
@@ -431,32 +610,69 @@
         if (first) goToClue(first, clues[ACROSS][0] ? ACROSS : DOWN);
     });
 
+    function printWith(className) {
+        document.body.classList.add(className);
+        const cleanup = () => document.body.classList.remove('print-blank', 'print-answers');
+        window.addEventListener('afterprint', cleanup, { once: true });
+        window.print();
+        setTimeout(cleanup, 1000); // browsers without afterprint
+    }
+
+    document.getElementById('print-blank').addEventListener('click', () => printWith('print-blank'));
+    document.getElementById('print-answers').addEventListener('click', () => printWith('print-answers'));
+
+    const toolbar = document.getElementById('toolbar');
+
+    // A custom puzzle travels in the URL; keep it when the form changes size
+    if (puzzle.custom) {
+        const custom = new URLSearchParams(window.location.search).get('custom');
+        if (custom) {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'custom';
+            hidden.value = custom;
+            toolbar.appendChild(hidden);
+        }
+    }
+
     document.getElementById('new-puzzle').addEventListener('click', () => {
-        const form = document.getElementById('toolbar');
-        const params = new URLSearchParams(new FormData(form));
+        const params = new URLSearchParams(new FormData(toolbar));
+        params.delete('date');
         params.set('seed', String(Math.floor(Math.random() * 1e9)));
         window.location.search = params.toString();
     });
+
+    document.getElementById('date-picker').addEventListener('change', () => toolbar.requestSubmit());
 
     window.addEventListener('resize', positionKeyboard);
 
     // --- Boot ------------------------------------------------------------------------
 
+    applyTheme((() => { try { return localStorage.getItem(THEME_KEY); } catch (e) { return null; } })());
+    applyMode((() => { try { return localStorage.getItem(MODE_KEY); } catch (e) { return null; } })());
+
     buildGrid();
     buildClues();
 
-    const saved = loadState();
+    const saved = readJson(storageKey);
     if (saved && Array.isArray(saved.entries)) {
         allCells().forEach(cell => {
             const v = saved.entries[cell.r] && saved.entries[cell.r][cell.c];
-            if (typeof v === 'string' && /^[A-Z]?$/.test(v)) setValue(cell, v);
+            if (typeof v === 'string' && /^[A-Za-z]?$/.test(v)) setValue(cell, v.toUpperCase(), v !== v.toUpperCase());
         });
         elapsed = Number(saved.elapsed) || 0;
+        reveals = Number(saved.reveals) || 0;
         timerEl.textContent = formatTime(elapsed);
+        if (saved.solved) {
+            solved = true;
+            allCells().forEach(cell => cell.td.classList.add('correct'));
+            showWin(null);
+        }
     }
 
     refreshClueDone();
     refreshProgress();
+    refreshStreak();
     checkSolved();
     startTimer();
 
