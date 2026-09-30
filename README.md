@@ -1,19 +1,20 @@
-# Crossword Puzzle Generator
+# Crossword Puzzle
 
-A PHP-based crossword puzzle generator that automatically creates a 12x12 interactive crossword puzzle from a list of words.
+A PHP and JavaScript crossword game. Every day gets a fresh puzzle per category, any puzzle can be shared by its number, and progress is saved in the browser.
 
 ## Features
 
-- Generates a 12x12 crossword puzzle from a predefined list of words
-- Words are placed across and down and every word crosses at least one other word
-- Standard crossword rules are enforced: no words touching side by side, no words joined end to end
-- Clues are numbered in reading order (top to bottom, left to right)
-- Words that cannot be fitted are listed on the page rather than dropped silently
-- Displays descriptive clues
-- **Interactive gameplay** with keyboard navigation and input validation
-- **Word highlighting** shows the current word being worked on
-- **Check answers** marks each filled cell right or wrong
-- **Reveal solution** option for when you're stuck
+- **Daily puzzle** per word set, plus unlimited random puzzles
+- **Shareable puzzles**: the same puzzle number always gives the same grid
+- **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography)
+- **Grid sizes** from 10x10 to 20x20
+- Proper crossword rules: every word crosses another, no side-by-side or end-to-end joins
+- Clues numbered in reading order, with the active clue shown above the grid
+- Keyboard navigation that follows crossword conventions
+- Check word, check all, reveal letter, reveal word
+- Timer, fill percentage, completed clues struck through, and a win message
+- Progress and solve state saved per puzzle in the browser
+- JSON output for use by other clients
 
 ## Requirements
 
@@ -25,7 +26,6 @@ A PHP-based crossword puzzle generator that automatically creates a 12x12 intera
 
 1. Clone or download this repository to your web server's document root
 2. Navigate to the directory in your web browser
-3. The crossword puzzle will be generated and displayed automatically
 
 For a quick local look without a web server:
 
@@ -37,81 +37,74 @@ then open http://localhost:8000 in a browser.
 
 ## Usage
 
-### Solving the Crossword
+### URL parameters
 
-- Click on any cell or clue to begin
-- Type letters to fill in the cells; the cursor advances along the highlighted word
-- Use arrow keys to navigate between cells
-- Press Enter or Space to switch between across and down
-- Click on a clue to jump to that word
+| Parameter | Meaning | Default |
+|---|---|---|
+| `set` | Word set, the file name in `words/` without `.json` | `animals` |
+| `size` | Grid size, 8 to 20 | `12` |
+| `seed` | Puzzle number. The same number always gives the same puzzle | Today's date |
+| `format=json` | Return the puzzle as JSON instead of the page | |
 
-### Control Buttons
+Examples:
 
-- **Check Answers**: Marks each filled cell green (correct) or red (incorrect). Your letters are left in place
-- **Reveal Answers**: Shows the complete solution
-- **Reset**: Clears all entries to start over
+- `index.php?set=food` today's food puzzle
+- `index.php?set=geography&size=15&seed=4242` a specific, shareable puzzle
+- `index.php?set=animals&seed=4242&format=json` the same puzzle as JSON
 
-### Customizing Words
+### Playing
 
-To customize the words used in the puzzle, edit the `$words` array in `index.php`:
+- Click a cell or a clue to select a word. The clue appears above the grid
+- Type letters. The cursor skips filled cells and jumps to the next unfinished clue at the end of a word
+- Arrow keys move along the current direction. Pressing an arrow across the direction switches it
+- Enter, Space, or clicking the selected cell switches between across and down
+- Backspace clears and steps back
+- **Check word** and **Check all** mark cells green or red without changing them
+- **Reveal letter** and **Reveal word** fill in answers, shown in blue
+- **Reset** clears the puzzle and restarts the timer
+- **Random puzzle** loads a new puzzle number. **Today's puzzle** returns to the daily one
 
-```php
-$words = ['YOUR', 'CUSTOM', 'WORDS', 'HERE'];
-```
+Progress is saved in the browser per puzzle, so a reload or a return the next day picks up where you left off.
 
-Words are uppercased automatically. Entries containing anything other than letters are ignored, as are duplicates.
+## Adding words
 
-You will also need to update the clues in the `generateClue()` function in `crossword.php`:
+Each word set is a JSON file in `words/`:
 
-```php
-function generateClue(string $word): string {
-    $clues = [
-        'YOUR' => 'Clue for your word',
-        'CUSTOM' => 'Clue for custom',
-        // Add more clues here
-    ];
-
-    return $clues[$word] ?? 'Definition for ' . strtolower($word);
+```json
+{
+  "name": "Animals",
+  "words": {
+    "CAT": "Purring house pet",
+    "DOG": "Loyal companion that barks"
+  }
 }
 ```
 
-Not every word list fits in every grid. Words that could not be placed are listed in a notice above the puzzle. Use a larger grid or a word list with more shared letters to fit more words.
-
-### Customizing the Grid Size
-
-To change the grid size, modify the `$rows` and `$columns` variables in `index.php`:
-
-```php
-$rows = 15;    // Change from 12 to your desired row count
-$columns = 15; // Change from 12 to your desired column count
-```
+Words may contain letters only and must be no longer than the smallest grid you want to support. Words are uppercased on load. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; 30 or more words is a good size. Drop a new file into `words/` and it appears in the word set menu.
 
 ## How It Works
 
-1. The application creates an empty grid
-2. Places the longest word across the middle
-3. Places each remaining word so that it crosses an existing word, choosing at random among the legal positions
-4. Retries any words that did not fit after each pass, since new words open new crossings
-5. Repeats the whole process a few hundred times and keeps the layout that fits the most words
-6. Numbers the words in reading order and generates clue lists for Across and Down
-7. Renders the grid with input fields for user interaction
-8. Uses JavaScript to enable keyboard navigation and answer validation
+1. The word set is loaded and the random generator is seeded with the puzzle number
+2. The longest word goes across the middle
+3. Each remaining word is placed so that it crosses an existing word, choosing at random among legal positions. Words that do not fit are retried after each pass
+4. The whole process runs a few hundred times and the layout with the most words wins
+5. Words are numbered in reading order and the puzzle is emitted as JSON
+6. `crossword.js` renders the grid, handles input, saves progress and detects completion
 
 ## Project Layout
 
-- `index.php` renders the page and holds the word list and grid size
-- `crossword.php` holds the generator: grid, placement rules, numbering and clues
-- `tests/generator_test.php` checks that generated grids obey crossword rules
+- `index.php` reads the request, generates the puzzle, and renders the page or JSON
+- `crossword.php` the generator: grid, placement rules, numbering, word set loading
+- `crossword.js` the game: rendering, navigation, checking, persistence
+- `words/*.json` word sets
+- `tests/generator_test.php` checks the generator, the word sets, seeding and the page
+- `.github/workflows/test.yml` runs the tests on PHP 8.0 and 8.4
 
 ## Running the Tests
 
 ```sh
 php tests/generator_test.php
 ```
-
-## Customization
-
-You can customize the appearance of the crossword puzzle by modifying the CSS in the `<style>` section of `index.php`.
 
 ## License
 

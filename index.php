@@ -8,39 +8,49 @@ if (version_compare(PHP_VERSION, '8.0.0', '<')) {
 
 require_once __DIR__ . '/crossword.php';
 
-$rows = 12;
-$columns = 12;
+// --- Request parameters -------------------------------------------------------
+// ?set=animals   word set (a file in words/)
+// ?size=12       grid size, 8 to 20
+// ?seed=123      any number; the same seed always gives the same puzzle.
+//                Defaults to today's date, which makes the default a daily puzzle.
+// ?format=json   return the puzzle as JSON instead of the page
 
-$words = ['CAT', 'DOG', 'MOUSE', 'FISH', 'BIRD', 'LION', 'TIGER', 'BEAR', 'MONKEY', 'COW', 'PIG', 'SHEEP', 'HUMAN'];
+$wordSets = listWordSets();
+if ($wordSets === []) {
+    http_response_code(500);
+    die('No word sets found in the words directory.');
+}
 
-[$puzzleGrid, $result] = generateCrossword($rows, $columns, $words);
-$placedWords = $result->placed;
+$setKey = (string) ($_GET['set'] ?? 'animals');
+if (!isset($wordSets[$setKey])) {
+    $setKey = (string) array_key_first($wordSets);
+}
+
+$size = (int) ($_GET['size'] ?? 12);
+$size = max(8, min(20, $size));
+
+$seedParam = (string) ($_GET['seed'] ?? '');
+$seed = preg_match('/^\d{1,9}$/', $seedParam) ? (int) $seedParam : (int) date('Ymd');
+$isDaily = !preg_match('/^\d{1,9}$/', $seedParam);
+
+$wordSet = loadWordSet($setKey);
+[$puzzleGrid, $result] = generateCrossword($size, $size, $wordSet->words(), 500, $seed);
+
+$puzzle = puzzleToArray($puzzleGrid, $result, $wordSet) + [
+    'set' => $setKey,
+    'setName' => $wordSet->name,
+    'seed' => $seed,
+    'daily' => $isDaily,
+];
+
+if (($_GET['format'] ?? '') === 'json') {
+    header('Content-Type: application/json');
+    echo json_encode($puzzle, JSON_THROW_ON_ERROR);
+    exit;
+}
 
 function h(string|int $value): string {
     return htmlspecialchars((string) $value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-}
-
-/**
- * Renders one clue list (across or down) sorted by clue number
- *
- * @param PlacedWord[] $placedWords
- * @param PuzzleCell[][] $puzzleGrid
- */
-function renderClues(array $placedWords, array $puzzleGrid, int $orientation): void {
-    $entries = [];
-    foreach ($placedWords as $word) {
-        if ($word->orientation !== $orientation) {
-            continue;
-        }
-        $number = $puzzleGrid[$word->startRow][$word->startColumn]->number;
-        $entries[$number] = $word;
-    }
-    ksort($entries);
-
-    foreach ($entries as $number => $word) {
-        echo '<li class="clue" data-orientation="' . $orientation . '" data-row="' . $word->startRow . '" data-col="' . $word->startColumn . '">'
-            . $number . '. ' . h(generateClue($word->word)) . '</li>';
-    }
 }
 ?>
 <!DOCTYPE html>
@@ -49,19 +59,97 @@ function renderClues(array $placedWords, array $puzzleGrid, int $orientation): v
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $rows ?>x<?= $columns ?> Crossword Puzzle</title>
+    <title><?= h($wordSet->name) ?> Crossword</title>
     <style>
+        :root {
+            --cell: 40px;
+            --selected: #cfe3ff;
+            --current: #ffd54f;
+            --correct: #a2ffa2;
+            --incorrect: #ffb3b3;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 16px;
+            color: #222;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin: 8px 0 4px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 12px;
+        }
+
+        .toolbar, .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 8px auto;
+        }
+
+        select, button, .button {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            border: 1px solid #bbb;
+            background: #f7f7f7;
+            color: #222;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        button.primary, .button.primary {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: #fff;
+        }
+
+        button:hover, .button:hover {
+            filter: brightness(0.95);
+        }
+
+        .status {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            font-size: 14px;
+            color: #444;
+            margin: 8px 0;
+        }
+
+        .active-clue {
+            max-width: 600px;
+            margin: 8px auto;
+            padding: 10px 14px;
+            background: var(--selected);
+            border-radius: 4px;
+            min-height: 20px;
+            text-align: center;
+        }
+
+        .active-clue b {
+            margin-right: 6px;
+        }
+
         table {
             border-collapse: collapse;
-            width: 50%;
-            margin: auto;
-            margin-top: 50px;
+            margin: 12px auto;
         }
 
         td {
             border: 1px solid #000;
-            height: 40px;
-            width: 40px;
+            height: var(--cell);
+            width: var(--cell);
             text-align: center;
             position: relative;
             padding: 0;
@@ -78,7 +166,7 @@ function renderClues(array $placedWords, array $puzzleGrid, int $orientation): v
         .number {
             position: absolute;
             top: 1px;
-            left: 1px;
+            left: 2px;
             font-size: 10px;
             z-index: 1;
             pointer-events: none;
@@ -93,260 +181,130 @@ function renderClues(array $placedWords, array $puzzleGrid, int $orientation): v
             text-transform: uppercase;
             background: transparent;
             box-sizing: border-box;
-            position: relative;
             outline: none;
+            caret-color: transparent;
         }
 
-        .selected {
-            background-color: #ffeb3b;
+        td.selected { background-color: var(--selected); }
+        td.current { background-color: var(--current); }
+        td.correct { background-color: var(--correct); }
+        td.incorrect { background-color: var(--incorrect); }
+        td.revealed .cell-input { color: #1565c0; }
+
+        .clues {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 32px;
+            max-width: 900px;
+            margin: 16px auto;
         }
 
-        .correct {
-            background-color: #a2ffa2;
+        .clues section {
+            flex: 1 1 280px;
         }
 
-        .incorrect {
-            background-color: #ffb3b3;
+        .clues h3 {
+            margin: 0 0 6px;
         }
 
-        button {
-            padding: 10px 15px;
-            margin: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        h2 {
-            text-align: center;
-        }
-
-        .controls {
-            text-align: center;
-            margin: 20px;
-        }
-
-        .warning {
-            width: 50%;
-            margin: 10px auto;
-            padding: 10px;
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
+        .clues ol {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
         .clue {
             cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
         }
 
-        .help {
-            width: 50%;
-            margin: auto;
-            font-size: 14px;
-            color: #555;
+        .clue:hover { background: #f0f0f0; }
+        .clue.active { background: var(--selected); }
+        .clue.done { color: #888; text-decoration: line-through; }
+
+        .banner {
+            display: none;
+            max-width: 600px;
+            margin: 12px auto;
+            padding: 12px 16px;
+            background: #e6f4ea;
+            border: 1px solid #b7dfc0;
+            border-radius: 4px;
             text-align: center;
+            font-size: 16px;
+        }
+
+        .banner.show { display: block; }
+
+        .help {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            max-width: 600px;
+            margin: 8px auto;
         }
     </style>
 </head>
 
 <body>
 
-    <h2><?= $rows ?>x<?= $columns ?> Crossword Puzzle</h2>
+    <h1><?= h($wordSet->name) ?> Crossword</h1>
+    <p class="subtitle">
+        <?= $isDaily ? 'Daily puzzle for ' . h(date('j F Y')) : 'Puzzle #' . h($seed) ?>
+        &middot; <?= h($size) ?>&times;<?= h($size) ?>
+        &middot; <?= h($puzzle['wordCount']) ?> words
+    </p>
 
-    <?php if ($result->unplaced !== []): ?>
-    <div class="warning">
-        Could not fit the following words into the grid: <?= h(implode(', ', $result->unplaced)) ?>.
-        Try a larger grid or a different word list.
+    <form class="toolbar" method="get" id="toolbar">
+        <select name="set" aria-label="Word set">
+            <?php foreach ($wordSets as $key => $name): ?>
+            <option value="<?= h($key) ?>"<?= $key === $setKey ? ' selected' : '' ?>><?= h($name) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <select name="size" aria-label="Grid size">
+            <?php foreach ([10, 12, 15, 18, 20] as $option): ?>
+            <option value="<?= $option ?>"<?= $option === $size ? ' selected' : '' ?>><?= $option ?>&times;<?= $option ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button type="submit">Today's puzzle</button>
+        <button type="button" id="new-puzzle" class="primary">Random puzzle</button>
+    </form>
+
+    <div class="status">
+        <span>Time: <span id="timer">0:00</span></span>
+        <span>Filled: <span id="progress">0%</span></span>
     </div>
-    <?php endif; ?>
+
+    <div class="banner" id="win-banner"></div>
+
+    <div class="active-clue" id="active-clue"></div>
+
+    <table id="crossword-grid" aria-label="Crossword grid"></table>
 
     <div class="controls">
-        <button id="check-puzzle">Check Answers</button>
-        <button id="reveal-puzzle">Reveal Answers</button>
+        <button id="check-word">Check word</button>
+        <button id="check-all">Check all</button>
+        <button id="reveal-letter">Reveal letter</button>
+        <button id="reveal-word">Reveal word</button>
         <button id="reset-puzzle">Reset</button>
     </div>
-    <p class="help">Type to fill cells. Arrow keys move. Enter or Space switches between across and down.</p>
+    <p class="help">Type to fill cells. Arrow keys move. Enter, Space, or clicking the selected cell switches between across and down. Progress is saved in this browser.</p>
 
-    <table id="crossword-grid">
-        <?php
-        // Render the grid with word numbers and input fields
-        for ($i = 0; $i < $rows; $i++) {
-            echo '<tr>';
-            for ($j = 0; $j < $columns; $j++) {
-                $cell = $puzzleGrid[$i][$j];
-                if ($cell->letter !== null) {
-                    echo '<td class="white">';
-                    if ($cell->number !== null) {
-                        echo '<span class="number">' . $cell->number . '</span>';
-                    }
-                    echo '<input type="text" class="cell-input" maxlength="1" autocomplete="off"'
-                        . ' aria-label="Row ' . ($i + 1) . ' column ' . ($j + 1) . '"'
-                        . ' data-row="' . $i . '" data-col="' . $j . '" data-letter="' . h($cell->letter) . '">';
-                    echo '</td>';
-                } else {
-                    echo '<td class="black"></td>';
-                }
-            }
-            echo '</tr>';
-        }
-        ?>
-    </table>
-
-    <div style="width: 50%; margin: auto; margin-top: 30px;">
-        <h3>Across</h3>
-        <ul id="across-clues"><?php renderClues($placedWords, $puzzleGrid, PlacedWord::ACROSS); ?></ul>
-        <h3>Down</h3>
-        <ul id="down-clues"><?php renderClues($placedWords, $puzzleGrid, PlacedWord::DOWN); ?></ul>
+    <div class="clues">
+        <section>
+            <h3>Across</h3>
+            <ol id="across-clues"></ol>
+        </section>
+        <section>
+            <h3>Down</h3>
+            <ol id="down-clues"></ol>
+        </section>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const inputs = document.querySelectorAll('.cell-input');
-            const clues = document.querySelectorAll('.clue');
-            const checkButton = document.getElementById('check-puzzle');
-            const revealButton = document.getElementById('reveal-puzzle');
-            const resetButton = document.getElementById('reset-puzzle');
-
-            let currentRow = 0;
-            let currentCol = 0;
-            let currentOrientation = 0; // 0 for across, 1 for down
-
-            function cellAt(row, col) {
-                return document.querySelector(`.cell-input[data-row="${row}"][data-col="${col}"]`);
-            }
-
-            // Move focus to a cell if it exists
-            function moveTo(row, col) {
-                const nextInput = cellAt(row, col);
-                if (nextInput) {
-                    nextInput.focus();
-                }
-            }
-
-            // Step one cell along the current orientation
-            function advance(delta) {
-                if (currentOrientation === 0) {
-                    moveTo(currentRow, currentCol + delta);
-                } else {
-                    moveTo(currentRow + delta, currentCol);
-                }
-            }
-
-            function highlightCurrentWord() {
-                inputs.forEach(input => input.classList.remove('selected'));
-
-                if (!cellAt(currentRow, currentCol)) return;
-
-                const dRow = currentOrientation === 1 ? 1 : 0;
-                const dCol = currentOrientation === 0 ? 1 : 0;
-
-                // Walk back to the start of the word
-                let row = currentRow;
-                let col = currentCol;
-                while (cellAt(row - dRow, col - dCol)) {
-                    row -= dRow;
-                    col -= dCol;
-                }
-
-                // Walk forward highlighting every cell in the word
-                let cell;
-                while ((cell = cellAt(row, col))) {
-                    cell.classList.add('selected');
-                    row += dRow;
-                    col += dCol;
-                }
-            }
-
-            function clearMarks(input) {
-                input.classList.remove('correct', 'incorrect');
-            }
-
-            inputs.forEach(input => {
-                input.addEventListener('focus', function() {
-                    currentRow = parseInt(this.dataset.row, 10);
-                    currentCol = parseInt(this.dataset.col, 10);
-                    this.select();
-                    highlightCurrentWord();
-                });
-
-                input.addEventListener('keydown', function(e) {
-                    const row = parseInt(this.dataset.row, 10);
-                    const col = parseInt(this.dataset.col, 10);
-
-                    if (e.key === 'ArrowRight') {
-                        moveTo(row, col + 1);
-                    } else if (e.key === 'ArrowLeft') {
-                        moveTo(row, col - 1);
-                    } else if (e.key === 'ArrowDown') {
-                        moveTo(row + 1, col);
-                    } else if (e.key === 'ArrowUp') {
-                        moveTo(row - 1, col);
-                    } else if (e.key === 'Enter' || e.key === ' ') {
-                        currentOrientation = currentOrientation === 0 ? 1 : 0;
-                        highlightCurrentWord();
-                    } else if (e.key === 'Backspace' && this.value === '') {
-                        advance(-1);
-                    } else {
-                        return; // let the browser handle it, including Tab
-                    }
-                    e.preventDefault();
-                });
-
-                input.addEventListener('input', function() {
-                    clearMarks(this);
-                    this.value = this.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 1);
-                    if (this.value.length === 1) {
-                        advance(1);
-                    }
-                });
-            });
-
-            clues.forEach(clue => {
-                clue.addEventListener('click', function() {
-                    currentOrientation = parseInt(this.dataset.orientation, 10);
-                    moveTo(parseInt(this.dataset.row, 10), parseInt(this.dataset.col, 10));
-                    highlightCurrentWord();
-                });
-            });
-
-            // Mark each filled cell right or wrong; leave the user's letters alone
-            checkButton.addEventListener('click', function() {
-                inputs.forEach(input => {
-                    clearMarks(input);
-                    if (input.value === '') return;
-                    input.classList.add(input.value.toUpperCase() === input.dataset.letter ? 'correct' : 'incorrect');
-                });
-            });
-
-            revealButton.addEventListener('click', function() {
-                inputs.forEach(input => {
-                    clearMarks(input);
-                    input.value = input.dataset.letter;
-                    input.classList.add('correct');
-                });
-            });
-
-            resetButton.addEventListener('click', function() {
-                inputs.forEach(input => {
-                    input.value = '';
-                    clearMarks(input);
-                });
-                currentOrientation = 0;
-                moveTo(parseInt(inputs[0]?.dataset.row ?? 0, 10), parseInt(inputs[0]?.dataset.col ?? 0, 10));
-            });
-
-            if (inputs.length > 0) {
-                inputs[0].focus();
-            }
-        });
-    </script>
+    <script type="application/json" id="puzzle-data"><?= json_encode($puzzle, JSON_HEX_TAG | JSON_HEX_AMP | JSON_THROW_ON_ERROR) ?></script>
+    <script src="crossword.js"></script>
 
 </body>
 

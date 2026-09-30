@@ -140,12 +140,57 @@ check($result->placed === [] && $result->unplaced === [], 'empty list');
 [$grid, $result] = generateCrossword(5, 5, ['123']);
 check($result->placed === [] && $result->unplaced === [], 'all-invalid list');
 
-// Rendering the page produces no warnings
+// Every shipped word set loads, and every word fits the largest supported grid
+$sets = listWordSets();
+check(count($sets) >= 3, 'at least three word sets ship');
+foreach (array_keys($sets) as $key) {
+    $set = loadWordSet($key);
+    check(count($set->clues) >= 20, "word set $key has at least 20 words");
+    foreach ($set->words() as $w) {
+        check(strlen($w) <= 12, "word $w in set $key is too long for a 12x12 grid");
+    }
+    [$grid, $result] = generateCrossword(12, 12, $set->words(), 100, 1);
+    assertValidCrossword($grid, $result, $set->words(), "word set $key");
+    check(count($result->placed) >= 12, "word set $key placed only " . count($result->placed) . " words on 12x12");
+}
+
+// Invalid word set keys are rejected before touching the filesystem
+try {
+    loadWordSet('../etc/passwd');
+    check(false, 'path traversal key accepted');
+} catch (InvalidArgumentException $e) {
+    check(true, '');
+}
+
+// Seeding makes generation reproducible, and different seeds differ
+$animals = loadWordSet('animals')->words();
+[$g1, $r1] = generateCrossword(12, 12, $animals, 50, 42);
+[$g2, $r2] = generateCrossword(12, 12, $animals, 50, 42);
+[$g3, $r3] = generateCrossword(12, 12, $animals, 50, 43);
+$dump = fn(array $g) => implode('', array_map(fn($row) => implode('', array_map(fn($c) => $c->letter ?? '.', $row)), $g));
+check($dump($g1) === $dump($g2), 'same seed gives the same grid');
+check($dump($g1) !== $dump($g3), 'different seeds give different grids');
+
+// puzzleToArray produces sorted clues and matching cells
+$arr = puzzleToArray($g1, $r1, loadWordSet('animals'));
+check($arr['rows'] === 12 && count($arr['cells']) === 12, 'puzzleToArray dimensions');
+$numbers = array_column($arr['across'], 'number');
+$sorted = $numbers;
+sort($sorted);
+check($numbers === $sorted, 'across clues sorted by number');
+check(count($arr['across']) + count($arr['down']) === count($r1->placed), 'clue count matches placed words');
+foreach (array_merge($arr['across'], $arr['down']) as $cl) {
+    check($arr['cells'][$cl['row']][$cl['col']]['number'] === $cl['number'], 'clue number matches cell number');
+}
+
+// Rendering the page produces no warnings, and the JSON endpoint works
+$_GET = ['set' => 'food', 'size' => '12', 'seed' => '7'];
 ob_start();
 try {
     require __DIR__ . '/../index.php';
     $html = ob_get_clean();
-    check(str_contains($html, 'class="cell-input"'), 'index.php renders inputs');
+    check(str_contains($html, 'id="puzzle-data"'), 'index.php embeds puzzle data');
+    check(str_contains($html, 'Food'), 'index.php uses the requested word set');
 } catch (Throwable $e) {
     ob_end_clean();
     check(false, 'index.php raised: ' . $e->getMessage());

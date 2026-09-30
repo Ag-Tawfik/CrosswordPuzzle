@@ -43,27 +43,64 @@ class PlacementResult {
 }
 
 /**
- * Generates a clue for a given word
+ * A named collection of words and their clues, loaded from words/<name>.json
  */
-function generateClue(string $word): string {
-    $clues = [
-        'CAT' => 'A small domesticated carnivorous mammal that purrs',
-        'DOG' => 'Man\'s best friend',
-        'MOUSE' => 'A small rodent with a pointed snout',
-        'FISH' => 'An aquatic animal with fins and gills',
-        'BIRD' => 'A warm-blooded egg-laying vertebrate with wings',
-        'LION' => 'The king of the jungle',
-        'TIGER' => 'Large Asian big cat with orange fur and black stripes',
-        'BEAR' => 'Large, heavy mammal with thick fur and a short tail',
-        'MONKEY' => 'A primate that typically has a long tail',
-        'COW' => 'A domesticated animal that produces milk',
-        'PIG' => 'A domesticated omnivorous mammal with a snout',
-        'SHEEP' => 'A domesticated ruminant animal with a woolly coat',
-        'HUMAN' => 'Homo sapiens',
-    ];
+class WordSet {
+    /** @param array<string, string> $clues word => clue */
+    public function __construct(public string $key, public string $name, public array $clues) {}
 
-    // Return the clue if it exists, otherwise generate a generic clue
-    return $clues[$word] ?? 'Definition for ' . strtolower($word);
+    /** @return string[] */
+    public function words(): array {
+        return array_keys($this->clues);
+    }
+}
+
+/**
+ * Lists the word sets available in the words directory, keyed by file name
+ *
+ * @return array<string, string> key => display name
+ */
+function listWordSets(string $directory = __DIR__ . '/words'): array
+{
+    $sets = [];
+    foreach (glob($directory . '/*.json') ?: [] as $file) {
+        $key = basename($file, '.json');
+        $data = json_decode((string) file_get_contents($file), true);
+        $sets[$key] = is_array($data) && isset($data['name']) ? (string) $data['name'] : $key;
+    }
+    ksort($sets);
+    return $sets;
+}
+
+/**
+ * Loads a word set by key. Keys are restricted to lowercase letters, digits
+ * and hyphens so a request parameter cannot escape the words directory.
+ */
+function loadWordSet(string $key, string $directory = __DIR__ . '/words'): WordSet
+{
+    if (!preg_match('/^[a-z0-9-]+$/', $key)) {
+        throw new InvalidArgumentException("Invalid word set key: $key");
+    }
+    $file = "$directory/$key.json";
+    if (!is_file($file)) {
+        throw new InvalidArgumentException("Unknown word set: $key");
+    }
+
+    $data = json_decode((string) file_get_contents($file), true);
+    if (!is_array($data) || !isset($data['words']) || !is_array($data['words'])) {
+        throw new RuntimeException("Malformed word set: $key");
+    }
+
+    $clues = [];
+    foreach ($data['words'] as $word => $clue) {
+        $normalised = normaliseWords([(string) $word]);
+        if ($normalised === [] || !is_string($clue) || trim($clue) === '') {
+            throw new RuntimeException("Malformed entry '$word' in word set: $key");
+        }
+        $clues[$normalised[0]] = trim($clue);
+    }
+
+    return new WordSet($key, (string) ($data['name'] ?? $key), $clues);
 }
 
 /**
@@ -304,13 +341,20 @@ function placeWordsInGrid(array &$puzzleGrid, array $words): PlacementResult
 /**
  * Generates a crossword, running the placer several times and keeping the
  * layout that fits the most words. Placement is randomised and cheap, so
- * restarts are the simplest way to get good coverage.
+ * restarts are the simplest way to get good coverage. Pass a seed to get
+ * the same puzzle back for the same inputs.
  *
  * @param string[] $words
  * @return array{0: PuzzleCell[][], 1: PlacementResult}
  */
-function generateCrossword(int $rows, int $columns, array $words, int $attempts = 500): array
+function generateCrossword(int $rows, int $columns, array $words, int $attempts = 500, ?int $seed = null): array
 {
+    if ($seed !== null) {
+        // shuffle() and array_rand() draw from the Mt19937 generator, so
+        // seeding it makes the whole layout reproducible from the seed
+        mt_srand($seed);
+    }
+
     $bestGrid = null;
     $bestResult = null;
 
@@ -351,4 +395,46 @@ function numberGrid(array &$puzzleGrid, array $placedWords): void
             $cell->number = isset($starts[$r][$c]) ? $number++ : null;
         }
     }
+}
+
+/**
+ * Converts a generated puzzle into a plain array suitable for JSON output.
+ * Cells are null (black) or {letter, number}. Clues are sorted by number.
+ *
+ * @param PuzzleCell[][] $puzzleGrid
+ * @return array<string, mixed>
+ */
+function puzzleToArray(array $puzzleGrid, PlacementResult $result, WordSet $wordSet): array
+{
+    $cells = [];
+    foreach ($puzzleGrid as $row) {
+        $cells[] = array_map(
+            fn(PuzzleCell $cell) => $cell->letter === null ? null : ['letter' => $cell->letter, 'number' => $cell->number],
+            $row
+        );
+    }
+
+    $clues = [PlacedWord::ACROSS => [], PlacedWord::DOWN => []];
+    foreach ($result->placed as $word) {
+        $clues[$word->orientation][] = [
+            'number' => $puzzleGrid[$word->startRow][$word->startColumn]->number,
+            'row' => $word->startRow,
+            'col' => $word->startColumn,
+            'length' => strlen($word->word),
+            'clue' => $wordSet->clues[$word->word] ?? 'Definition for ' . strtolower($word->word),
+        ];
+    }
+    foreach ($clues as &$list) {
+        usort($list, fn(array $a, array $b): int => $a['number'] <=> $b['number']);
+    }
+    unset($list);
+
+    return [
+        'rows' => count($puzzleGrid),
+        'columns' => count($puzzleGrid[0]),
+        'cells' => $cells,
+        'across' => $clues[PlacedWord::ACROSS],
+        'down' => $clues[PlacedWord::DOWN],
+        'wordCount' => count($result->placed),
+    ];
 }
