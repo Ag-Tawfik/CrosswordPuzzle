@@ -10,6 +10,7 @@
 </head>
 
 <body>
+<div class="page">
 
     <h1>Crossword</h1>
     <p class="subtitle">Loading…</p>
@@ -37,9 +38,9 @@
     </form>
 
     <div class="status">
-        <span>Time: <span id="timer">0:00</span></span>
-        <span>Filled: <span id="progress">0%</span></span>
-        <span id="streak-status" hidden>Streak: <span id="streak">0</span></span>
+        <span>Time <strong id="timer">0:00</strong></span>
+        <span>Filled <strong id="progress">0%</strong></span>
+        <span id="streak-status" hidden>Streak <strong id="streak">0</strong></span>
         <button type="button" id="stats-button" class="link">Stats</button>
         <button type="button" id="theme-button" class="link" aria-label="Toggle dark mode">Dark</button>
     </div>
@@ -60,14 +61,18 @@
     <table id="crossword-grid" aria-label="Crossword grid"></table>
 
     <div class="controls">
-        <button type="button" id="check-word" class="needs-check">Check word</button>
-        <button type="button" id="check-all" class="needs-check">Check all</button>
-        <button type="button" id="reveal-letter" class="needs-check">Reveal letter</button>
-        <button type="button" id="reveal-word" class="needs-check">Reveal word</button>
-        <button type="button" id="pencil" aria-pressed="false">Pencil</button>
-        <button type="button" id="reset-puzzle">Reset</button>
-        <button type="button" id="print-blank">Print</button>
-        <button type="button" id="print-answers">Print answers</button>
+        <div class="control-group">
+            <button type="button" id="check-word" class="needs-check">Check word</button>
+            <button type="button" id="check-all" class="needs-check">Check all</button>
+            <button type="button" id="reveal-letter" class="needs-check">Reveal letter</button>
+            <button type="button" id="reveal-word" class="needs-check">Reveal word</button>
+        </div>
+        <div class="control-group">
+            <button type="button" id="pencil" aria-pressed="false">Pencil</button>
+            <button type="button" id="reset-puzzle">Reset</button>
+            <button type="button" id="print-blank">Print</button>
+            <button type="button" id="print-answers">Print answers</button>
+        </div>
     </div>
     <p class="help">Tap or click a cell and type. Arrow keys move. Enter, Space, or tapping the selected cell switches between across and down. Progress is saved in this browser.</p>
 
@@ -88,6 +93,8 @@
         <p class="muted">Stored in this browser only.</p>
         <form method="dialog"><button type="submit">Close</button></form>
     </dialog>
+
+</div>
 
     <script src="generator.js"></script>
     <script src="crossword.js"></script>

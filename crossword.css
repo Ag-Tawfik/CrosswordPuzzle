@@ -1,168 +1,280 @@
+/* ------------------------------------------------------------------
+   Design tokens
+   ------------------------------------------------------------------ */
 :root {
     --gutter: 16px;
-    --cell: min(40px, calc((100vw - 2 * var(--gutter)) / var(--columns, 12)));
+    --cell: min(44px, calc((100vw - 2 * var(--gutter)) / var(--columns, 12)));
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px -12px rgba(16, 24, 40, 0.18);
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
-    --bg: #ffffff;
-    --fg: #222222;
-    --muted: #666666;
-    --border: #bbbbbb;
-    --control-bg: #f7f7f7;
-    --hover-bg: #f0f0f0;
-    --grid-line: #000000;
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --fg: #1a1d23;
+    --muted: #6b7280;
+    --border: #e3e6ea;
+    --border-strong: #c9ced6;
+    --control-bg: #ffffff;
+    --hover-bg: #f1f3f6;
+
+    --accent: #3b5bdb;
+    --accent-fg: #ffffff;
+    --accent-soft: #e3e9fb;
+
+    --grid-line: #2b2f36;
+    --grid-frame: #1a1d23;
     --cell-bg: #ffffff;
-    --black-bg: #000000;
-    --selected: #cfe3ff;
-    --current: #ffd54f;
-    --correct: #a2ffa2;
-    --incorrect: #ffb3b3;
-    --revealed: #1565c0;
-    --pencil: #777777;
-    --primary: #4CAF50;
-    --banner-bg: #e6f4ea;
-    --banner-border: #b7dfc0;
-    --warn-bg: #fff3cd;
-    --warn-border: #ffeeba;
-    --warn-fg: #856404;
+    --cell-fg: #15181d;
+    --black-bg: #1a1d23;
+    --selected: #dbe4ff;
+    --current: #ffd43b;
+    --correct: #c3f0cf;
+    --incorrect: #ffd0d0;
+    --revealed: #1c4ed8;
+    --pencil: #8a919c;
+
+    --success-bg: #e8f7ec;
+    --success-border: #b7e1c3;
+    --success-fg: #1b5e2e;
+    --warn-bg: #fff6df;
+    --warn-border: #f5dc9a;
+    --warn-fg: #7a5a00;
 }
 
-/* Dark theme: follows the system unless the user picked one with the button */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --bg: #16181c;
-        --fg: #e8e8e8;
-        --muted: #9a9a9a;
-        --border: #444444;
-        --control-bg: #24272d;
-        --hover-bg: #2c3037;
-        --grid-line: #555555;
-        --cell-bg: #f2f2f2;
-        --black-bg: #0a0a0a;
-        --selected: #9dbbe6;
-        --current: #f2c541;
-        --correct: #7fd48a;
-        --incorrect: #e58a8a;
-        --revealed: #0d47a1;
-        --pencil: #555555;
-        --banner-bg: #1e3324;
-        --banner-border: #2e5a38;
-        --warn-bg: #3d3316;
-        --warn-border: #6b5a22;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+        --bg: #111318;
+        --surface: #1a1d24;
+        --fg: #e7e9ee;
+        --muted: #9aa1ad;
+        --border: #2a2f39;
+        --border-strong: #3b414d;
+        --control-bg: #222630;
+        --hover-bg: #2a2f3a;
+
+        --accent: #7b96ff;
+        --accent-fg: #0f1320;
+        --accent-soft: #243058;
+
+        --grid-line: #4a505c;
+        --grid-frame: #5a6170;
+        --cell-bg: #eef0f4;
+        --cell-fg: #15181d;
+        --black-bg: #0b0d11;
+        --selected: #aebfff;
+        --current: #f5c400;
+        --correct: #8fd9a5;
+        --incorrect: #f0a0a0;
+        --revealed: #1c4ed8;
+        --pencil: #6b727d;
+
+        --success-bg: #17301f;
+        --success-border: #2b5a38;
+        --success-fg: #bfe8cb;
+        --warn-bg: #352b10;
+        --warn-border: #6b5520;
         --warn-fg: #f3d98b;
     }
 }
 
 :root[data-theme="dark"] {
-    --bg: #16181c;
-    --fg: #e8e8e8;
-    --muted: #9a9a9a;
-    --border: #444444;
-    --control-bg: #24272d;
-    --hover-bg: #2c3037;
-    --grid-line: #555555;
-    --cell-bg: #f2f2f2;
-    --black-bg: #0a0a0a;
-    --selected: #9dbbe6;
-    --current: #f2c541;
-    --correct: #7fd48a;
-    --incorrect: #e58a8a;
-    --revealed: #0d47a1;
-    --pencil: #555555;
-    --banner-bg: #1e3324;
-    --banner-border: #2e5a38;
-    --warn-bg: #3d3316;
-    --warn-border: #6b5a22;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    --bg: #111318;
+    --surface: #1a1d24;
+    --fg: #e7e9ee;
+    --muted: #9aa1ad;
+    --border: #2a2f39;
+    --border-strong: #3b414d;
+    --control-bg: #222630;
+    --hover-bg: #2a2f3a;
+
+    --accent: #7b96ff;
+    --accent-fg: #0f1320;
+    --accent-soft: #243058;
+
+    --grid-line: #4a505c;
+    --grid-frame: #5a6170;
+    --cell-bg: #eef0f4;
+    --cell-fg: #15181d;
+    --black-bg: #0b0d11;
+    --selected: #aebfff;
+    --current: #f5c400;
+    --correct: #8fd9a5;
+    --incorrect: #f0a0a0;
+    --revealed: #1c4ed8;
+    --pencil: #6b727d;
+
+    --success-bg: #17301f;
+    --success-border: #2b5a38;
+    --success-fg: #bfe8cb;
+    --warn-bg: #352b10;
+    --warn-border: #6b5520;
     --warn-fg: #f3d98b;
 }
 
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
 * { box-sizing: border-box; }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.45;
     margin: 0;
-    padding: var(--gutter);
+    padding: 0 var(--gutter) 48px;
     color: var(--fg);
     background: var(--bg);
 }
 
+.page {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
 h1 {
     text-align: center;
-    font-size: 22px;
-    margin: 4px 0 2px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 28px 0 2px;
 }
 
 .subtitle {
     text-align: center;
     color: var(--muted);
     font-size: 14px;
-    margin: 0 0 10px;
+    margin: 0 0 16px;
 }
 
 .muted { color: var(--muted); font-size: 13px; }
 
 code {
-    background: var(--control-bg);
-    padding: 1px 4px;
-    border-radius: 3px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--hover-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
 }
 
+a { color: var(--accent); }
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Controls
+   ------------------------------------------------------------------ */
 .toolbar, .controls, .row {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 8px;
-    margin: 8px auto;
+}
+
+.toolbar {
+    margin: 0 auto 12px;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 
 select, button, .button, input[type="date"], input[type="text"], textarea {
-    padding: 8px 12px;
+    font: inherit;
     font-size: 14px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
+    padding: 0 12px;
+    min-height: 38px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-strong);
     background: var(--control-bg);
     color: var(--fg);
     text-decoration: none;
-    min-height: 40px;
-    font-family: inherit;
+    transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+select {
+    padding-right: 28px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
 }
 
 select, button, .button { cursor: pointer; }
 
+.button { display: inline-flex; align-items: center; justify-content: center; }
+
+[hidden] { display: none !important; }
+
+button:hover, .button:hover, select:hover { background-color: var(--hover-bg); }
+button:active { transform: translateY(1px); }
+
 button.primary, .button.primary {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 600;
 }
 
-button:hover, .button:hover { filter: brightness(0.95); }
+button.primary:hover, .button.primary:hover { filter: brightness(1.06); background: var(--accent); }
 
 button[aria-pressed="true"] {
-    background: var(--selected);
-    border-color: var(--selected);
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--fg);
 }
 
 button.link {
     border: none;
     background: none;
-    color: var(--revealed);
-    text-decoration: underline;
+    color: var(--accent);
     padding: 0;
     min-height: 0;
     font-size: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
+
+button.link:hover { background: none; }
 
 .status {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 16px;
-    font-size: 14px;
+    gap: 6px 18px;
+    font-size: 13px;
     color: var(--muted);
-    margin: 6px 0;
+    margin: 0 0 10px;
+    font-variant-numeric: tabular-nums;
 }
 
-/* Sticky clue bar with previous / next word buttons */
+.status strong { color: var(--fg); font-weight: 600; }
+
+/* Groups of related game buttons */
+.controls { margin: 14px auto 4px; gap: 6px 10px; }
+.control-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+}
+.control-group + .control-group { padding-left: 10px; border-left: 1px solid var(--border); }
+
+/* ------------------------------------------------------------------
+   Clue bar
+   ------------------------------------------------------------------ */
 .clue-bar {
     position: sticky;
     top: 0;
@@ -170,37 +282,52 @@ button.link {
     display: flex;
     align-items: stretch;
     gap: 6px;
-    max-width: 640px;
-    margin: 8px auto;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 8px 0;
     background: var(--bg);
-    padding: 4px 0;
 }
 
 .clue-bar button {
     flex: 0 0 44px;
     padding: 0;
-    font-size: 20px;
-    background: var(--selected);
+    font-size: 22px;
+    line-height: 1;
+    background: var(--accent-soft);
     border-color: transparent;
-    color: #222;
+    color: var(--fg);
 }
+
+.clue-bar button:hover { background: var(--selected); }
 
 .active-clue {
     flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 10px;
     text-align: center;
-    padding: 8px 10px;
-    background: var(--selected);
-    color: #222;
-    border-radius: 4px;
-    min-height: 44px;
+    padding: 8px 12px;
+    background: var(--accent-soft);
+    color: var(--fg);
+    border-radius: var(--radius-sm);
+    min-height: 46px;
     font-size: 15px;
     line-height: 1.3;
 }
 
-.active-clue b { margin-right: 6px; white-space: nowrap; }
+.active-clue b {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    white-space: nowrap;
+}
 
 /* The one real input: keeps the on-screen keyboard open while cells change */
 #kbd {
@@ -216,11 +343,16 @@ button.link {
     font-size: 16px; /* prevents iOS from zooming on focus */
 }
 
+/* ------------------------------------------------------------------
+   Grid
+   ------------------------------------------------------------------ */
 table {
     border-collapse: collapse;
-    margin: 10px auto;
+    margin: 8px auto 0;
     table-layout: fixed;
     width: calc(var(--cell) * var(--columns, 12));
+    border: 2px solid var(--grid-frame);
+    box-shadow: var(--shadow);
     -webkit-user-select: none;
     user-select: none;
 }
@@ -234,10 +366,12 @@ td {
     text-align: center;
     vertical-align: middle;
     font-size: calc(var(--cell) * 0.55);
+    font-weight: 500;
     line-height: 1;
     text-transform: uppercase;
     cursor: pointer;
-    color: #111;
+    color: var(--cell-fg);
+    transition: background-color 80ms ease;
 }
 
 .black { background-color: var(--black-bg); cursor: default; }
@@ -246,56 +380,99 @@ td {
 .number {
     position: absolute;
     top: 1px;
-    left: 2px;
-    font-size: max(8px, calc(var(--cell) * 0.26));
+    left: 3px;
+    font-size: max(8px, calc(var(--cell) * 0.24));
+    font-weight: 600;
     line-height: 1;
+    color: #4b5563;
     pointer-events: none;
 }
+
+.letter { padding-top: calc(var(--cell) * 0.08); display: inline-block; }
 
 td.selected { background-color: var(--selected); }
 td.current { background-color: var(--current); }
 td.correct { background-color: var(--correct); }
 td.incorrect { background-color: var(--incorrect); }
 td.revealed { color: var(--revealed); }
-td.pencil .letter { color: var(--pencil); font-style: italic; font-size: 85%; }
+td.pencil .letter { color: var(--pencil); font-style: italic; font-weight: 400; font-size: 85%; }
 
 /* Hard mode hides every check and reveal control */
 .mode-hard .needs-check { display: none; }
+.mode-hard .control-group:first-child { display: none; }
 
+/* ------------------------------------------------------------------
+   Clue lists
+   ------------------------------------------------------------------ */
 .clues {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 16px 32px;
-    max-width: 900px;
-    margin: 12px auto;
+    gap: 16px;
+    max-width: 960px;
+    margin: 20px auto 0;
 }
 
-.clues section { flex: 1 1 260px; min-width: 0; }
-.clues h3 { margin: 0 0 6px; }
+.clues section {
+    flex: 1 1 300px;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 12px 10px;
+}
+
+.clues h3 {
+    margin: 0 6px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
 .clues ol { list-style: none; padding: 0; margin: 0; }
 
 .clue {
+    display: grid;
+    grid-template-columns: 2.2em 1fr;
+    gap: 6px;
     cursor: pointer;
-    padding: 6px;
-    border-radius: 3px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
     font-size: 15px;
+    line-height: 1.35;
+    border-left: 3px solid transparent;
+}
+
+.clue .n {
+    font-weight: 700;
+    text-align: right;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
 }
 
 .clue:hover { background: var(--hover-bg); }
-.clue.active { background: var(--selected); color: #222; }
-.clue.done { color: var(--muted); text-decoration: line-through; }
+.clue.active { background: var(--accent-soft); border-left-color: var(--accent); }
+.clue.active .n { color: var(--fg); }
+.clue.done { color: var(--muted); }
+.clue.done .t { text-decoration: line-through; text-decoration-color: var(--border-strong); }
 
+/* ------------------------------------------------------------------
+   Banners and dialog
+   ------------------------------------------------------------------ */
 .banner {
     display: none;
-    max-width: 640px;
-    margin: 10px auto;
+    max-width: 680px;
+    margin: 0 auto 10px;
     padding: 12px 16px;
-    background: var(--banner-bg);
-    border: 1px solid var(--banner-border);
-    border-radius: 4px;
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    color: var(--success-fg);
+    border-radius: var(--radius);
     text-align: center;
-    font-size: 16px;
+    font-size: 15px;
+    font-weight: 500;
     align-items: center;
     justify-content: center;
     gap: 12px;
@@ -304,69 +481,96 @@ td.pencil .letter { color: var(--pencil); font-style: italic; font-size: 85%; }
 
 .banner.show { display: flex; }
 .banner.warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-fg); }
-.banner button { min-height: 32px; padding: 4px 12px; }
+.banner button { min-height: 34px; padding: 0 14px; }
 
 .help {
     text-align: center;
     font-size: 13px;
     color: var(--muted);
     max-width: 640px;
-    margin: 8px auto;
+    margin: 8px auto 0;
 }
 
 dialog {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
+    border-radius: var(--radius);
+    background: var(--surface);
     color: var(--fg);
     max-width: 420px;
     width: calc(100vw - 2 * var(--gutter));
-    padding: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
 }
 
-dialog::backdrop { background: rgba(0, 0, 0, 0.4); }
-dialog h2 { margin: 0 0 12px; font-size: 20px; }
-dialog dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; margin: 0 0 12px; }
+dialog::backdrop { background: rgba(10, 12, 16, 0.5); }
+dialog h2 { margin: 0 0 14px; font-size: 20px; }
+dialog dl { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; margin: 0 0 12px; }
 dialog dt { color: var(--muted); }
-dialog dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
-dialog h3 { font-size: 14px; margin: 12px 0 6px; }
+dialog dd { margin: 0; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+dialog h3 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 14px 0 6px; }
 dialog ul { list-style: none; padding: 0; margin: 0; font-size: 13px; }
-dialog li { display: flex; justify-content: space-between; padding: 2px 0; }
+dialog li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-top: 1px solid var(--border); }
+dialog form { margin-top: 14px; text-align: right; }
 
-/* Create page */
-.create-page h1 { margin-bottom: 8px; }
+/* ------------------------------------------------------------------
+   Create page
+   ------------------------------------------------------------------ */
+.create-page h1 { margin-bottom: 6px; }
 .create-form, #create-result {
     max-width: 640px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
 }
-.create-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-.create-form textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
-#create-link { width: 100%; font-size: 13px; }
+#create-result { margin-top: 16px; }
+.create-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.create-form .row { align-items: flex-end; justify-content: flex-start; }
+.create-form .row button, .create-form .row .button { min-height: 40px; }
+.create-form input, .create-form textarea { font-weight: 400; color: var(--fg); padding: 8px 12px; }
+.create-form textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.5; }
+#create-link { width: 100%; font-size: 13px; padding: 8px 12px; }
 #create-error { margin: 0; }
+#create-result p { margin: 0; }
 
-@media (max-width: 480px) {
-    .status { gap: 12px; font-size: 13px; }
+/* ------------------------------------------------------------------
+   Small screens
+   ------------------------------------------------------------------ */
+@media (max-width: 560px) {
+    h1 { font-size: 22px; margin-top: 18px; }
+    .toolbar { padding: 8px; gap: 6px; }
+    .toolbar select, .toolbar input[type="date"], .toolbar button, .toolbar .button { flex: 1 1 42%; min-height: 40px; font-size: 13px; padding: 0 8px; }
+    .status { gap: 6px 12px; }
     .help { display: none; }
-    .controls button { flex: 1 1 30%; padding: 8px 4px; font-size: 13px; }
+    .controls { gap: 6px; }
+    .control-group + .control-group { padding-left: 0; border-left: 0; }
+    .control-group button { flex: 1 1 30%; padding: 0 6px; font-size: 13px; min-height: 40px; }
+    .clues { gap: 12px; }
+    .clue { font-size: 14px; padding: 7px 6px; }
 }
 
-/* Print: an empty grid and the clues, or the answer key */
+/* ------------------------------------------------------------------
+   Print: an empty grid and the clues, or the answer key
+   ------------------------------------------------------------------ */
 @media print {
     body { padding: 0; background: #fff; color: #000; }
-    .toolbar, .controls, .status, .banner, .help, .clue-bar button, #kbd, dialog { display: none !important; }
-    .clue-bar { position: static; }
-    .active-clue { display: none; }
-    table { --cell: 26px; }
+    .toolbar, .controls, .status, .banner, .help, .clue-bar, #kbd, dialog { display: none !important; }
+    table { --cell: 26px; box-shadow: none; border-color: #000; }
     td { border-color: #000; color: #000; }
     .black { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .white, td.selected, td.current, td.correct, td.incorrect { background: #fff !important; }
+    .number { color: #000; }
     body.print-blank .letter { display: none; }
     body.print-answers .letter { display: none; }
     body.print-answers td.white::after { content: attr(data-answer); }
     .clues { gap: 12px 24px; page-break-inside: avoid; }
-    .clue { padding: 2px 0; font-size: 12px; }
-    .clue.done, .clue.active { color: #000; text-decoration: none; background: none; }
+    .clues section { border: 0; box-shadow: none; padding: 0; }
+    .clue { padding: 2px 0; font-size: 12px; border-left: 0; }
+    .clue.done, .clue.active { color: #000; background: none; }
+    .clue.done .t { text-decoration: none; }
 }

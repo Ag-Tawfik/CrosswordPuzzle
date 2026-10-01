@@ -164,7 +164,13 @@ window.startGame = function (puzzle) {
             clues[o].forEach(cl => {
                 const li = document.createElement('li');
                 li.className = 'clue';
-                li.textContent = `${cl.number}. ${cl.clue}`;
+                const n = document.createElement('span');
+                n.className = 'n';
+                n.textContent = cl.number;
+                const t = document.createElement('span');
+                t.className = 't';
+                t.textContent = cl.clue;
+                li.append(n, t);
                 li.addEventListener('click', () => {
                     goToClue(cl, o);
                     focusKeyboard();
