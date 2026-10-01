@@ -1,5 +1,5 @@
 // Minimal static file server for tests and local play. Usage: node tests/static-server.js [port]
-// Exports start(port) for the test suite; serves the repository root.
+// Exports start(port, root) for the test suite; serves the repository root unless a root is given.
 
 const http = require('node:http');
 const fs = require('node:fs');
@@ -17,7 +17,7 @@ const TYPES = {
     '.svg': 'image/svg+xml',
 };
 
-function start(port = 0) {
+function start(port = 0, root = ROOT) {
     const server = http.createServer((req, res) => {
         let urlPath;
         try {
@@ -28,8 +28,8 @@ function start(port = 0) {
             return;
         }
         if (urlPath.endsWith('/')) urlPath += 'index.html';
-        const file = path.normalize(path.join(ROOT, urlPath));
-        const inside = file === ROOT || file.startsWith(ROOT + path.sep);
+        const file = path.normalize(path.join(root, urlPath));
+        const inside = file === root || file.startsWith(root + path.sep);
         if (!inside || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
             res.writeHead(404);
             res.end('Not found');
