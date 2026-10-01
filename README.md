@@ -100,6 +100,7 @@ A word may have one clue or a list of clues. Which clue appears depends on the p
 - `generator.js` the generator: grid, placement rules, numbering, word sets, seeded random. Runs in the browser and in Node
 - `crossword.js` the game: rendering, navigation, checking, persistence, stats
 - `crossword.css` styles, including dark mode and print
+- `favicon.svg` the tab icon, with `favicon.ico` as the fallback for browsers that ignore SVG icons
 - `words/*.json` word sets, listed in `words/index.json`
 - `tests/generator.test.js` checks generated grids against crossword rules, seeding and word sets
 - `tests/browser.test.js` drives the game in Chromium: typing, navigation, phones, creator, stats, modes, print
