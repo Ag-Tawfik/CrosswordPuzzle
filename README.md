@@ -52,10 +52,10 @@ Examples:
 - Type letters. The cursor skips filled cells and jumps to the next unfinished clue at the end of a word
 - Arrow keys move along the current direction. Pressing an arrow across the direction switches it
 - Enter, Space, or tapping the selected cell again switches between across and down
-- Backspace clears and steps back
+- Backspace clears and steps back; Delete clears the cell without moving. Tab leaves the grid
 - **Check word** and **Check all** mark cells green or red without changing them
 - **Reveal letter** and **Reveal word** fill in answers, shown in blue
-- **Pencil** (or the `.` key) enters tentative letters shown in grey
+- **Pencil** (or the `.` key) enters tentative letters shown in grey. **Reset** clears every entry and restarts the timer, after asking
 - **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**
 - **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal
 - **Print** gives a blank grid with clues. **Print answers** gives the key
@@ -103,8 +103,8 @@ A word may have one clue or a list of clues. Which clue appears depends on the p
 - `favicon.svg` the tab icon, with `favicon.ico` as the fallback for browsers that ignore SVG icons
 - `words/*.json` word sets, listed in `words/index.json`
 - `tests/generator.test.js` checks generated grids against crossword rules, seeding and word sets
-- `tests/browser.test.js` drives the game in Chromium: typing, navigation, phones, creator, stats, modes, print
-- `tests/static-server.js` the small file server used by the tests and `npm run serve`
+- `tests/browser.test.js` drives the game in Chromium: typing, navigation, phones, creator, stats, modes, print. Also checks the static server: icons, malformed requests, directory traversal
+- `tests/static-server.js` the small file server used by the tests and `npm run serve`. Serves the repository root, or a root passed to `start()`
 - `.github/workflows/test.yml` runs the tests on every push; `pages.yml` deploys `main`
 
 ## Running the Tests
@@ -114,6 +114,8 @@ npm install
 npx playwright install chromium
 npm test
 ```
+
+`npm test` runs a syntax check (`npm run lint`), the generator tests (`npm run test:generator`) and the browser tests (`npm run test:browser`). Each can be run on its own. The browser tests start the static server on a free port, so nothing else needs to be running. The browser tests treat any console error, failed request or 4xx/5xx response as a failure, so a missing asset fails the suite.
 
 ## License
 
