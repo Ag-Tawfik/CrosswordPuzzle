@@ -399,7 +399,7 @@ td.pencil .letter { color: var(--pencil); font-style: italic; font-weight: 400; 
 
 /* Hard mode hides every check and reveal control */
 .mode-hard .needs-check { display: none; }
-.mode-hard .control-group:first-child { display: none; }
+.mode-hard .control-group + .control-group { padding-left: 0; border-left: 0; }
 
 /* ------------------------------------------------------------------
    Clue lists
@@ -532,7 +532,8 @@ dialog form { margin-top: 14px; text-align: right; }
 .create-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
 .create-form .row { align-items: flex-end; justify-content: flex-start; }
 .create-form .row button, .create-form .row .button { min-height: 40px; }
-.create-form input, .create-form textarea { font-weight: 400; color: var(--fg); padding: 8px 12px; }
+.create-form input, .create-form textarea, .create-form select { font-weight: 400; color: var(--fg); }
+.create-form input, .create-form textarea { padding: 8px 12px; }
 .create-form textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; line-height: 1.5; }
 #create-link { width: 100%; font-size: 13px; padding: 8px 12px; }
 #create-error { margin: 0; }
@@ -545,11 +546,12 @@ dialog form { margin-top: 14px; text-align: right; }
     h1 { font-size: 22px; margin-top: 18px; }
     .toolbar { padding: 8px; gap: 6px; }
     .toolbar select, .toolbar input[type="date"], .toolbar button, .toolbar .button { flex: 1 1 42%; min-height: 40px; font-size: 13px; padding: 0 8px; }
+    .toolbar select { padding-right: 28px; }
     .status { gap: 6px 12px; }
     .help { display: none; }
     .controls { gap: 6px; }
     .control-group + .control-group { padding-left: 0; border-left: 0; }
-    .control-group button { flex: 1 1 30%; padding: 0 6px; font-size: 13px; min-height: 40px; }
+    .control-group button { flex: 1 1 45%; padding: 0 6px; font-size: 13px; min-height: 40px; }
     .clues { gap: 12px; }
     .clue { font-size: 14px; padding: 7px 6px; }
 }
