@@ -108,7 +108,7 @@ describe('desktop play', () => {
 
         await page.click(cellSel(r, c));
         const before = await activeClue(page);
-        await page.keyboard.press(before.includes('Across') ? 'ArrowDown' : 'ArrowRight');
+        await page.keyboard.press(/across/i.test(before) ? 'ArrowDown' : 'ArrowRight');
         assert.notEqual(await activeClue(page), before, 'arrow across the axis switches direction');
 
         await page.keyboard.press('Tab');
@@ -220,7 +220,7 @@ describe('phone', () => {
         const first = p.across[0];
         await page.tap(cellSel(first.row, first.col));
         assert.equal(await page.evaluate(() => document.activeElement.id), 'kbd', 'tap focuses the keyboard input');
-        assert.ok((await activeClue(page)).includes('Across'), 'first tap does not flip direction');
+        assert.ok(/across/i.test(await activeClue(page)), 'first tap does not flip direction');
 
         const word = Array.from({ length: first.length }, (_, i) => p.cells[first.row][first.col + i].letter);
         for (const ch of word) {
