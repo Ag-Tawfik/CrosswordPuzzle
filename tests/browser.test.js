@@ -4,6 +4,7 @@
 const { test, before, after, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const { chromium, devices } = require('playwright');
+const path = require('node:path');
 const { start } = require('./static-server.js');
 
 let server, browser, base;
@@ -25,6 +26,8 @@ async function newPage(options = {}) {
     page.errors = [];
     page.on('pageerror', e => page.errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error') page.errors.push(m.text()); });
+    page.on('response', r => { if (r.status() >= 400) page.errors.push(`${r.status()} ${r.url()}`); });
+    page.on('requestfailed', r => page.errors.push(`${r.failure()?.errorText} ${r.url()}`));
     return page;
 }
 
@@ -239,6 +242,22 @@ describe('phone', () => {
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), '20x20 fits too');
         assert.deepEqual(page.errors, []);
         await page.context().close();
+    });
+});
+
+describe('static server', () => {
+    test('serves both icons with the right types and survives bad requests', async () => {
+        const page = await newPage();
+        const svg = await page.request.get(base + 'favicon.svg');
+        assert.equal(svg.status(), 200);
+        assert.equal(svg.headers()['content-type'], 'image/svg+xml');
+        const ico = await page.request.get(base + 'favicon.ico');
+        assert.equal(ico.status(), 200);
+        assert.equal(ico.headers()['content-type'], 'image/x-icon');
+
+        assert.equal((await page.request.get(base + '%E0%A4%A')).status(), 400, 'malformed escape is a 400, not a crash');
+        assert.equal((await page.request.get(base + '..%2F' + path.basename(path.join(__dirname, '..')) + '-other%2Fx')).status(), 404, 'sibling directory with the same name prefix stays outside the root');
+        assert.equal((await page.request.get(base + 'index.html')).status(), 200, 'server still up afterwards');
     });
 });
 
