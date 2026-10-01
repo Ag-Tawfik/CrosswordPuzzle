@@ -5,6 +5,8 @@ const { test, before, after, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const { chromium, devices } = require('playwright');
 const path = require('node:path');
+const fs = require('node:fs');
+const os = require('node:os');
 const { start } = require('./static-server.js');
 
 let server, browser, base;
@@ -27,7 +29,8 @@ async function newPage(options = {}) {
     page.on('pageerror', e => page.errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error') page.errors.push(m.text()); });
     page.on('response', r => { if (r.status() >= 400) page.errors.push(`${r.status()} ${r.url()}`); });
-    page.on('requestfailed', r => page.errors.push(`${r.failure()?.errorText} ${r.url()}`));
+    // A navigation cancels in-flight requests (e.g. a favicon fetch); that is not a failure.
+    page.on('requestfailed', r => { const t = r.failure()?.errorText; if (t !== 'net::ERR_ABORTED') page.errors.push(`${t} ${r.url()}`); });
     return page;
 }
 
@@ -256,8 +259,28 @@ describe('static server', () => {
         assert.equal(ico.headers()['content-type'], 'image/x-icon');
 
         assert.equal((await page.request.get(base + '%E0%A4%A')).status(), 400, 'malformed escape is a 400, not a crash');
-        assert.equal((await page.request.get(base + '..%2F' + path.basename(path.join(__dirname, '..')) + '-other%2Fx')).status(), 404, 'sibling directory with the same name prefix stays outside the root');
         assert.equal((await page.request.get(base + 'index.html')).status(), 200, 'server still up afterwards');
+    });
+
+    test('a sibling directory sharing the root name prefix is not served', async () => {
+        // Serve <tmp>/root and put a secret in <tmp>/root-other, so a prefix-only root check would leak it.
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'crossword-'));
+        const root = path.join(dir, 'root');
+        fs.mkdirSync(root);
+        fs.mkdirSync(path.join(dir, 'root-other'));
+        fs.writeFileSync(path.join(dir, 'root-other', 'secret.txt'), 'leak');
+        fs.writeFileSync(path.join(root, 'ok.txt'), 'fine');
+        const srv = await start(0, root);
+        const url = `http://127.0.0.1:${srv.address().port}/`;
+        const page = await newPage();
+        try {
+            assert.equal((await page.request.get(url + 'ok.txt')).status(), 200, 'files inside the root are served');
+            assert.equal((await page.request.get(url + '..%2Froot-other%2Fsecret.txt')).status(), 404, 'sibling directory stays outside the root');
+        } finally {
+            await page.context().close();
+            srv.close();
+            fs.rmSync(dir, { recursive: true, force: true });
+        }
     });
 });
 
