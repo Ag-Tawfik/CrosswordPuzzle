@@ -1,8 +1,3 @@
-<?php
-declare(strict_types=1);
-require_once __DIR__ . '/crossword.php';
-
-?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -42,7 +37,7 @@ require_once __DIR__ . '/crossword.php';
                 </select>
             </label>
             <button type="submit" class="primary">Build puzzle</button>
-            <a class="button" href="index.php">Back to the daily puzzle</a>
+            <a class="button" href="index.html">Back to the daily puzzle</a>
         </div>
 
         <p id="create-error" class="banner warn" hidden></p>
@@ -58,6 +53,7 @@ require_once __DIR__ . '/crossword.php';
         <p class="muted">Words that do not fit are left out. Try a bigger grid or words that share more letters if too many are missing.</p>
     </div>
 
+    <script src="generator.js"></script>
     <script src="create.js"></script>
 
 </body>

@@ -1,6 +1,6 @@
 # Crossword Puzzle
 
-A PHP and JavaScript crossword game. Every day gets a fresh puzzle per category, any puzzle can be shared by its number, and progress is saved in the browser.
+A crossword game that runs entirely in the browser. Every day gets a fresh puzzle per category, any puzzle can be shared by its number, you can build your own from a list of words, and progress is saved locally. No server, no build step: it is static HTML, CSS and JavaScript, hosted on GitHub Pages.
 
 ## Features
 
@@ -11,34 +11,22 @@ A PHP and JavaScript crossword game. Every day gets a fresh puzzle per category,
 - **Stats and streaks** kept in the browser, with a share button for your result
 - **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal
 - **Pencil mode** for tentative letters, **dark mode**, and **print** for a blank grid or the answer key
-- **Grid sizes** from 10x10 to 20x20
-- Proper crossword rules: every word crosses another, no side-by-side or end-to-end joins
-- Clues numbered in reading order, with the active clue shown above the grid
-- Keyboard navigation that follows crossword conventions
 - Works on phones: the grid scales to the screen, the active clue stays pinned at the top, and the keyboard stays open while you move between cells
-- Check word, check all, reveal letter, reveal word
-- Timer, fill percentage, completed clues struck through, and a win message
-- Progress and solve state saved per puzzle in the browser
-- JSON output for use by other clients
+- Proper crossword rules: every word crosses another, no side-by-side or end-to-end joins, clues numbered in reading order
 
-## Requirements
+## Running it
 
-- PHP 8.0 or later
-- A web server (Apache, Nginx, etc.), or PHP's built-in server for local use
-- Modern web browser with JavaScript enabled
-
-## Installation
-
-1. Clone or download this repository to your web server's document root
-2. Navigate to the directory in your web browser
-
-For a quick local look without a web server:
+Open `index.html` from any static web server. For a local look:
 
 ```sh
-php -S localhost:8000
+npm run serve
 ```
 
-then open http://localhost:8000 in a browser.
+then open http://127.0.0.1:8000/ in a browser. Opening the file directly from disk does not work, because the page fetches the word sets.
+
+### GitHub Pages
+
+The workflow in `.github/workflows/pages.yml` publishes the repository root to GitHub Pages on every push to `main`. To turn it on once: in the repository settings, under Pages, set the source to **GitHub Actions**. The site then lives at `https://<owner>.github.io/<repo>/`.
 
 ## Usage
 
@@ -50,14 +38,13 @@ then open http://localhost:8000 in a browser.
 | `size` | Grid size, 8 to 20 | `12` |
 | `seed` | Puzzle number. The same number always gives the same puzzle | Today's date (UTC) |
 | `date` | A past day's daily puzzle, as `YYYY-MM-DD`. Overrides `seed` | |
-| `custom` | A custom puzzle made on `create.php`. Overrides `set` | |
-| `format=json` | Return the puzzle as JSON instead of the page | |
+| `custom` | A custom puzzle made on `create.html`. Overrides `set` | |
 
 Examples:
 
-- `index.php?set=food` today's food puzzle
-- `index.php?set=geography&size=15&seed=4242` a specific, shareable puzzle
-- `index.php?set=animals&seed=4242&format=json` the same puzzle as JSON
+- `index.html?set=food` today's food puzzle
+- `index.html?set=geography&size=15&seed=4242` a specific, shareable puzzle
+- `index.html?set=animals&date=2026-03-01` the animals puzzle from that day
 
 ### Playing
 
@@ -68,7 +55,6 @@ Examples:
 - Backspace clears and steps back
 - **Check word** and **Check all** mark cells green or red without changing them
 - **Reveal letter** and **Reveal word** fill in answers, shown in blue
-- **Reset** clears the puzzle and restarts the timer
 - **Pencil** (or the `.` key) enters tentative letters shown in grey
 - **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**
 - **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal
@@ -80,11 +66,11 @@ Progress, stats, mode and theme are saved in the browser. A daily streak counts 
 
 ### Making your own puzzle
 
-Open `create.php`, give the puzzle a title, and enter one word per line as `WORD: clue`. The page builds a link that contains the whole puzzle, so there is nothing to host or save. Anyone with the link gets the same grid. Words that do not fit the chosen grid size are left out.
+Open `create.html`, give the puzzle a title, and enter one word per line as `WORD: clue`. The page builds a link that contains the whole puzzle, so there is nothing to host or save. Anyone with the link gets the same grid. Words that do not fit the chosen grid size are left out.
 
 ## Adding words
 
-Each word set is a JSON file in `words/`:
+Each word set is a JSON file in `words/`, listed in `words/index.json`:
 
 ```json
 {
@@ -96,37 +82,36 @@ Each word set is a JSON file in `words/`:
 }
 ```
 
-A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days.
-
-Words may contain letters only and must be no longer than the smallest grid you want to support. Words are uppercased on load. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; 30 or more words is a good size. Drop a new file into `words/` and it appears in the word set menu.
+A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; 30 or more words is a good size. Add the new file to `words/index.json` and it appears in the word set menu.
 
 ## How It Works
 
-1. The word set is loaded and the random generator is seeded with the puzzle number
+1. `app.js` reads the URL, loads the word set, and seeds the random generator with the puzzle number
 2. The longest word goes across the middle
 3. Each remaining word is placed so that it crosses an existing word, choosing at random among legal positions. Words that do not fit are retried after each pass
-4. The whole process runs a few hundred times and the layout with the most words wins
-5. Words are numbered in reading order and the puzzle is emitted as JSON
+4. The whole process runs a few hundred times and the layout that fits the most words wins
+5. Words are numbered in reading order and handed to the game
 6. `crossword.js` renders the grid, routes all typing through one hidden input so phone keyboards stay open, saves progress and detects completion
 
 ## Project Layout
 
-- `index.php` reads the request, generates the puzzle, and renders the page or JSON
-- `create.php` and `create.js` the custom puzzle builder
-- `crossword.php` the generator: grid, placement rules, numbering, word set loading
+- `index.html` and `app.js` the puzzle page and its bootstrap
+- `create.html` and `create.js` the custom puzzle builder
+- `generator.js` the generator: grid, placement rules, numbering, word sets, seeded random. Runs in the browser and in Node
 - `crossword.js` the game: rendering, navigation, checking, persistence, stats
 - `crossword.css` styles, including dark mode and print
-- `words/*.json` word sets
-- `tests/generator_test.php` checks the generator, the word sets, seeding and the page
+- `words/*.json` word sets, listed in `words/index.json`
+- `tests/generator.test.js` checks generated grids against crossword rules, seeding and word sets
 - `tests/browser.test.js` drives the game in Chromium: typing, navigation, phones, creator, stats, modes, print
-- `.github/workflows/test.yml` runs both on every push
+- `tests/static-server.js` the small file server used by the tests and `npm run serve`
+- `.github/workflows/test.yml` runs the tests on every push; `pages.yml` deploys `main`
 
 ## Running the Tests
 
 ```sh
-php tests/generator_test.php        # generator and page
-npm install && npx playwright install chromium
-npm run test:browser                # game in a real browser
+npm install
+npx playwright install chromium
+npm test
 ```
 
 ## License

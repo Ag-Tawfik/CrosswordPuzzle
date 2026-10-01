@@ -5,30 +5,15 @@ on:
   pull_request:
 
 jobs:
-  php:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: ['8.0', '8.4']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-      - run: php -l index.php && php -l create.php && php -l crossword.php
-      - run: php tests/generator_test.php
-
-  browser:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
-      - run: node --check crossword.js && node --check create.js
+      - run: npm run lint
+      - run: npm run test:generator
       - run: npm run test:browser

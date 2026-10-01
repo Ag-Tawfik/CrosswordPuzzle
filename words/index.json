@@ -1,0 +1,26 @@
+[
+  {
+    "key": "animals",
+    "name": "Animals"
+  },
+  {
+    "key": "food",
+    "name": "Food & Drink"
+  },
+  {
+    "key": "geography",
+    "name": "Geography"
+  },
+  {
+    "key": "home",
+    "name": "Around the House"
+  },
+  {
+    "key": "science",
+    "name": "Science"
+  },
+  {
+    "key": "sports",
+    "name": "Sports"
+  }
+]

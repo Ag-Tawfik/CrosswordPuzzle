@@ -1,10 +1,10 @@
-(function () {
+// The game. app.js builds the puzzle and calls startGame(puzzle).
+window.startGame = function (puzzle) {
     'use strict';
 
     const ACROSS = 0;
     const DOWN = 1;
 
-    const puzzle = JSON.parse(document.getElementById('puzzle-data').textContent);
     const storageKey = `crossword:${puzzle.set}:${puzzle.rows}:${puzzle.seed}`;
     const STATS_KEY = 'crossword:stats';
     const MODE_KEY = 'crossword:mode';
@@ -684,4 +684,4 @@
     if (!window.matchMedia('(pointer: coarse)').matches) {
         focusKeyboard();
     }
-})();
+};

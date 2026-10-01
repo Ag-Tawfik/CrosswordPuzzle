@@ -41,12 +41,7 @@
         return { words, problems };
     }
 
-    function base64url(str) {
-        const bytes = new TextEncoder().encode(str);
-        let bin = '';
-        bytes.forEach(b => { bin += String.fromCharCode(b); });
-        return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
+    const base64url = Crossword.base64urlEncode;
 
     form.addEventListener('submit', e => {
         e.preventDefault();
@@ -60,7 +55,7 @@
         if (problems.length) { showError(problems.join(' ')); return; }
 
         const payload = base64url(JSON.stringify({ name: titleEl.value.trim(), words }));
-        const url = new URL('index.php', window.location.href);
+        const url = new URL('index.html', window.location.href);
         url.searchParams.set('custom', payload);
         url.searchParams.set('size', String(size));
 

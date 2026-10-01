@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Crossword</title>
+    <link rel="stylesheet" href="crossword.css">
+</head>
+
+<body>
+
+    <h1>Crossword</h1>
+    <p class="subtitle">Loading…</p>
+
+    <div class="banner warn" id="load-warning"></div>
+
+    <form class="toolbar" method="get" id="toolbar">
+        <select name="set" aria-label="Word set"></select>
+        <select name="size" aria-label="Grid size">
+            <option value="10">10×10</option>
+            <option value="12" selected>12×12</option>
+            <option value="15">15×15</option>
+            <option value="18">18×18</option>
+            <option value="20">20×20</option>
+        </select>
+        <input type="date" name="date" id="date-picker" aria-label="Puzzle date">
+        <select id="mode" aria-label="Difficulty">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+        </select>
+        <button type="submit">Go</button>
+        <button type="button" id="new-puzzle" class="primary">Random puzzle</button>
+        <a class="button" href="create.html">Create your own</a>
+    </form>
+
+    <div class="status">
+        <span>Time: <span id="timer">0:00</span></span>
+        <span>Filled: <span id="progress">0%</span></span>
+        <span id="streak-status" hidden>Streak: <span id="streak">0</span></span>
+        <button type="button" id="stats-button" class="link">Stats</button>
+        <button type="button" id="theme-button" class="link" aria-label="Toggle dark mode">Dark</button>
+    </div>
+
+    <div class="banner" id="win-banner">
+        <span id="win-text"></span>
+        <button type="button" id="share-button">Share</button>
+    </div>
+
+    <div class="clue-bar">
+        <button type="button" id="prev-word" aria-label="Previous word">&lsaquo;</button>
+        <div class="active-clue" id="active-clue" aria-live="polite"></div>
+        <button type="button" id="next-word" aria-label="Next word">&rsaquo;</button>
+    </div>
+
+    <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Type letters into the crossword">
+
+    <table id="crossword-grid" aria-label="Crossword grid"></table>
+
+    <div class="controls">
+        <button type="button" id="check-word" class="needs-check">Check word</button>
+        <button type="button" id="check-all" class="needs-check">Check all</button>
+        <button type="button" id="reveal-letter" class="needs-check">Reveal letter</button>
+        <button type="button" id="reveal-word" class="needs-check">Reveal word</button>
+        <button type="button" id="pencil" aria-pressed="false">Pencil</button>
+        <button type="button" id="reset-puzzle">Reset</button>
+        <button type="button" id="print-blank">Print</button>
+        <button type="button" id="print-answers">Print answers</button>
+    </div>
+    <p class="help">Tap or click a cell and type. Arrow keys move. Enter, Space, or tapping the selected cell switches between across and down. Progress is saved in this browser.</p>
+
+    <div class="clues">
+        <section>
+            <h3>Across</h3>
+            <ol id="across-clues"></ol>
+        </section>
+        <section>
+            <h3>Down</h3>
+            <ol id="down-clues"></ol>
+        </section>
+    </div>
+
+    <dialog id="stats-dialog">
+        <h2>Your stats</h2>
+        <dl id="stats-list"></dl>
+        <p class="muted">Stored in this browser only.</p>
+        <form method="dialog"><button type="submit">Close</button></form>
+    </dialog>
+
+    <script src="generator.js"></script>
+    <script src="crossword.js"></script>
+    <script src="app.js"></script>
+
+</body>
+
+</html>
