@@ -37,6 +37,7 @@ const puzzleData = page => page.evaluate(() => window.__puzzle);
 const cellSel = (r, c) => `td[data-row="${r}"][data-col="${c}"]`;
 const letterAt = (page, r, c) => page.locator(`${cellSel(r, c)} .letter`).innerText();
 const activeClue = page => page.locator('#active-clue').innerText();
+const activeLabel = page => page.locator('#active-clue b').textContent();
 const rowText = (page, r, c, n) => page.evaluate(([r, c, n]) => {
     let s = '';
     for (let i = 0; i < n; i++) s += document.querySelector(`td[data-row="${r}"][data-col="${c + i}"] .letter`).textContent;
@@ -108,7 +109,7 @@ describe('desktop play', () => {
 
         await page.click(cellSel(r, c));
         const before = await activeClue(page);
-        await page.keyboard.press(/across/i.test(before) ? 'ArrowDown' : 'ArrowRight');
+        await page.keyboard.press(/^\d+ Across$/.test(await activeLabel(page)) ? 'ArrowDown' : 'ArrowRight');
         assert.notEqual(await activeClue(page), before, 'arrow across the axis switches direction');
 
         await page.keyboard.press('Tab');
@@ -220,7 +221,7 @@ describe('phone', () => {
         const first = p.across[0];
         await page.tap(cellSel(first.row, first.col));
         assert.equal(await page.evaluate(() => document.activeElement.id), 'kbd', 'tap focuses the keyboard input');
-        assert.ok(/across/i.test(await activeClue(page)), 'first tap does not flip direction');
+        assert.match(await activeLabel(page), /^\d+ Across$/, 'first tap does not flip direction');
 
         const word = Array.from({ length: first.length }, (_, i) => p.cells[first.row][first.col + i].letter);
         for (const ch of word) {
