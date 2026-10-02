@@ -63,7 +63,8 @@
     --warn-fg: #8a5300;
 }
 
-/* Dark appearance, matching the system or chosen by the user */
+/* Dark appearance, matching the system or chosen by the user.
+   The grid inverts too: dark cells, light letters, deep-tinted states. */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
         --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 12px 32px -16px rgba(0, 0, 0, 0.8);
@@ -93,18 +94,18 @@
         --yellow: #ffd60a;
         --orange: #ff9f0a;
 
-        --grid-line: #8e8e93;
+        --grid-line: #48484a;
         --grid-frame: #3a3a3c;
-        --cell-bg: #f2f2f7;
-        --cell-fg: #1d1d1f;
-        --cell-number: #636366;
+        --cell-bg: #2c2c2e;
+        --cell-fg: #f5f5f7;
+        --cell-number: #98989d;
         --black-bg: #000000;
-        --selected: #b5d2ff;
-        --current: #ffd60a;
-        --correct: #9fe6b4;
-        --incorrect: #ffb3ad;
-        --revealed: #0062cc;
-        --pencil: #6e6e73;
+        --selected: #1e3d66;
+        --current: #8c6b00;
+        --correct: #1f4d2b;
+        --incorrect: #5e1f1c;
+        --revealed: #64b5ff;
+        --pencil: #98989d;
 
         --success-bg: rgba(48, 209, 88, 0.18);
         --success-fg: #7ee29a;
@@ -141,18 +142,18 @@
     --yellow: #ffd60a;
     --orange: #ff9f0a;
 
-    --grid-line: #8e8e93;
+    --grid-line: #48484a;
     --grid-frame: #3a3a3c;
-    --cell-bg: #f2f2f7;
-    --cell-fg: #1d1d1f;
-    --cell-number: #636366;
+    --cell-bg: #2c2c2e;
+    --cell-fg: #f5f5f7;
+    --cell-number: #98989d;
     --black-bg: #000000;
-    --selected: #b5d2ff;
-    --current: #ffd60a;
-    --correct: #9fe6b4;
-    --incorrect: #ffb3ad;
-    --revealed: #0062cc;
-    --pencil: #6e6e73;
+    --selected: #1e3d66;
+    --current: #8c6b00;
+    --correct: #1f4d2b;
+    --incorrect: #5e1f1c;
+    --revealed: #64b5ff;
+    --pencil: #98989d;
 
     --success-bg: rgba(48, 209, 88, 0.18);
     --success-fg: #7ee29a;
