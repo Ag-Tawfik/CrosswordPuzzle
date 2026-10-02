@@ -499,7 +499,24 @@ window.startGame = function (puzzle) {
                 button.textContent = 'Copied';
             }
         } catch (e) {
-            window.prompt('Copy your result:', text);
+            shareText.value = text;
+            shareCopy.textContent = 'Copy';
+            shareDialog.showModal();
+            shareText.select();
+        }
+    });
+
+    // Fallback when the clipboard is unavailable: the result in a box to copy by hand
+    const shareDialog = document.getElementById('share-dialog');
+    const shareText = document.getElementById('share-text');
+    const shareCopy = document.getElementById('share-copy');
+    shareCopy.addEventListener('click', async () => {
+        try {
+            await navigator.clipboard.writeText(shareText.value);
+            shareCopy.textContent = 'Copied';
+        } catch (e) {
+            shareText.focus();
+            shareText.select();
         }
     });
 
@@ -598,8 +615,18 @@ window.startGame = function (puzzle) {
         if (!solved) nextClue(1, true);
     });
 
-    onButton('reset-puzzle', () => {
-        if (!confirm('Clear all your entries and restart the timer?')) return;
+    // Reset asks first, in a dialog whose safe answer is the default
+    const resetDialog = document.getElementById('reset-dialog');
+    document.getElementById('reset-puzzle').addEventListener('click', () => {
+        resetDialog.returnValue = '';
+        resetDialog.showModal();
+    });
+    resetDialog.addEventListener('close', () => {
+        if (resetDialog.returnValue === 'reset') resetPuzzle();
+        focusKeyboard();
+    });
+
+    function resetPuzzle() {
         allCells().forEach(cell => {
             setValue(cell, '');
             cell.td.classList.remove('revealed', 'correct');
@@ -614,7 +641,7 @@ window.startGame = function (puzzle) {
         afterEdit();
         const first = clues[ACROSS][0] || clues[DOWN][0];
         if (first) goToClue(first, clues[ACROSS][0] ? ACROSS : DOWN);
-    });
+    }
 
     function printWith(className) {
         document.body.classList.add(className);

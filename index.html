@@ -98,6 +98,25 @@
         <form method="dialog"><button type="submit">Close</button></form>
     </dialog>
 
+    <dialog id="reset-dialog" class="alert" aria-labelledby="reset-title">
+        <h2 id="reset-title">Reset this puzzle?</h2>
+        <p>Every entry is cleared and the timer starts again.</p>
+        <form method="dialog" class="alert-actions">
+            <button type="submit" value="cancel" autofocus>Cancel</button>
+            <button type="submit" value="reset" class="destructive">Reset</button>
+        </form>
+    </dialog>
+
+    <dialog id="share-dialog" class="alert" aria-labelledby="share-title">
+        <h2 id="share-title">Your result</h2>
+        <p>Copying was blocked, so here it is to copy by hand.</p>
+        <textarea id="share-text" readonly rows="5" aria-label="Result text"></textarea>
+        <form method="dialog" class="alert-actions">
+            <button type="submit" value="close">Close</button>
+            <button type="button" id="share-copy" class="primary">Copy</button>
+        </form>
+    </dialog>
+
 </div>
 
     <script src="generator.js"></script>
