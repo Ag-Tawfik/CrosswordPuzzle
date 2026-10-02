@@ -521,6 +521,39 @@ describe('creator and archive', () => {
         await page.context().close();
     });
 
+    test('a bare visit shows Today: a card per set with its daily and Mini, ticked once solved', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        assert.equal(await page.evaluate(() => window.__puzzle), null, 'no puzzle is generated on the front door');
+        assert.ok(await page.locator('#today').isVisible());
+        assert.ok(await page.locator('#toolbar').isHidden(), 'the puzzle chrome is hidden');
+        assert.equal(await page.locator('h1').innerText(), 'Crossword');
+        assert.match(await page.locator('.subtitle').innerText(), /^[A-Z][a-z]+day \d{1,2} [A-Z][a-z]+ \d{4}$/);
+        const setCount = (await page.request.get(base + 'words/index.json')).ok() ? (await (await page.request.get(base + 'words/index.json')).json()).length + 1 : 0;
+        assert.equal(await page.locator('.today-card').count(), setCount, 'one card per set, Mixed included');
+        assert.equal(await page.locator('.today-card a').count(), setCount * 2);
+        assert.equal(await page.locator('.today-card a.solved').count(), 0);
+        assert.ok(await page.locator('#today-streaks').isHidden(), 'no streak line without a streak');
+        const miniHref = await page.locator('.today-card').first().locator('a').nth(1).getAttribute('href');
+        assert.ok(miniHref.includes('mini=1'));
+
+        // Solve the first set's Mini, come back: it is ticked and the Mini streak shows
+        await page.locator('.today-card').first().locator('a').nth(1).click();
+        await page.waitForFunction(() => window.__puzzle && window.__puzzle.mini);
+        await solve(page);
+        await page.click('#today-link');
+        await page.waitForFunction(() => document.getElementById('today') && !document.getElementById('today').hidden);
+        assert.equal(await page.locator('.today-card a.solved').count(), 1);
+        assert.ok(await page.locator('.today-card').first().locator('a').nth(1).evaluate(a => a.classList.contains('solved')), 'the solved Mini is ticked');
+        assert.match(await page.locator('#today-streaks').innerText(), /Mini streak 1/);
+        assert.ok(!(await page.locator('#today-streaks').innerText()).includes('Streak 1'), 'no full streak yet');
+        assert.ok((await page.locator('#today-random').getAttribute('href')).includes('set=mixed&seed='));
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
     test('the mixed set draws from every topic and works as a Mini', async () => {
         const page = await newPage();
         await go(page, base + 'index.html?set=mixed&seed=11');

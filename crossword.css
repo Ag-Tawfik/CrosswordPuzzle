@@ -427,6 +427,62 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 }
 
 .status strong { color: var(--fg); font-weight: 600; }
+.status a.link { padding: 4px 8px; border-radius: 8px; font-weight: 500; }
+.status a.link:hover { background: var(--accent-soft); text-decoration: none; }
+
+/* ------------------------------------------------------------------
+   Today: the front door, one card per word set with its daily and Mini
+   ------------------------------------------------------------------ */
+.today { max-width: 960px; margin: 0 auto; }
+.today-streaks { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 14px; font-variant-numeric: tabular-nums; }
+.today-streaks strong { color: var(--fg); font-weight: 600; }
+.today-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.today-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 0 0 var(--hairline) var(--separator), var(--shadow);
+    padding: 14px 10px 8px;
+}
+.today-card h2 { margin: 0 8px 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.today-card a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 8px;
+    border-radius: var(--radius-sm);
+    color: var(--fg);
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    transition: background-color 120ms ease;
+}
+.today-card a:hover { background: var(--fill); text-decoration: none; }
+.today-card a + a { position: relative; }
+.today-card a + a::before { content: ""; position: absolute; left: 44px; right: 8px; top: 0; border-top: var(--hairline) solid var(--separator); }
+.today-card a:hover::before, .today-card a:hover + a::before { border-color: transparent; }
+.today-card .tick {
+    flex: 0 0 26px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 var(--hairline) var(--separator-strong);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-fg);
+}
+.today-card .tick svg { width: 14px; height: 14px; visibility: hidden; }
+.today-card a.solved .tick { background: var(--accent); box-shadow: none; }
+.today-card a.solved .tick svg { visibility: visible; }
+.today-card a.solved { color: var(--muted); }
+.today-card .size { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.today-actions { margin-top: 18px; }
+.today .help { display: block; }
+
+/* On the front door the puzzle chrome is hidden */
+body.today-mode .toolbar, body.today-mode .status, body.today-mode .clue-bar, body.today-mode .grid-wrap,
+body.today-mode .controls, body.today-mode .page > .help, body.today-mode .clues,
+body.today-mode #win-banner, body.today-mode #full-banner, body.today-mode #challenge-banner { display: none !important; }
 
 /* The cost of a reveal, popping up beside the timer */
 .penalty { display: inline-block; margin-left: 6px; color: var(--red); font-weight: 600; opacity: 0; }
