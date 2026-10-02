@@ -296,6 +296,15 @@ select {
     text-overflow: ellipsis;
 }
 
+/* The option list is drawn by the browser; give it explicit colours so the
+   text stays readable whatever background it picks (Firefox uses the
+   select's translucent fill, which lands light over white) */
+select option, select optgroup {
+    font-weight: 400;
+    background: var(--surface);
+    color: var(--fg);
+}
+
 input[type="date"] { font-variant-numeric: tabular-nums; }
 input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer; }
 
