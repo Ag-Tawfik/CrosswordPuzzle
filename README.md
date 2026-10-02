@@ -57,7 +57,7 @@ Examples:
 - **Reveal letter** and **Reveal word** fill in answers, shown in blue
 - **Pencil** (or the `.` key) enters tentative letters shown in grey. **Reset** clears every entry and restarts the timer, after asking
 - **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**
-- **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal
+- **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal. In every mode a full grid that is not correct shows a note saying so, without saying where
 - **Print** gives a blank grid with clues. **Print answers** gives the key
 - **Share** on the win banner copies your time and the puzzle link. **Stats** shows solves, streak and times
 - **Dark** switches the theme; by default it follows your system setting
