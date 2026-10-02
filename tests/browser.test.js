@@ -231,10 +231,24 @@ describe('desktop play', () => {
         const right = p.cells[first.row][first.col].letter;
         const wrong = right === 'Z' ? 'Q' : 'Z';
 
+        // Hard mode swaps every clue for the harder one, in the list and the bar, and back again
+        const animals = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'words', 'animals.json'), 'utf8'));
+        const firstWord = Array.from({ length: first.length }, (_, i) => p.cells[first.row][first.col + i].letter).join('');
+        const normalClues = [].concat(animals.words[firstWord]);
+        const hardClues = [].concat(animals.hard[firstWord]);
+        await page.click(cellSel(first.row, first.col));
+        assert.ok(normalClues.includes(await page.locator('#across-clues .clue >> nth=0 >> .t').innerText()), 'normal clue in the list');
         await page.selectOption('#mode', 'hard');
         assert.ok(await page.locator('#check-word').isHidden(), 'hard hides check');
+        assert.ok(hardClues.includes(await page.locator('#across-clues .clue >> nth=0 >> .t').innerText()), 'hard clue in the list');
+        // The bar shows whichever clue is active, which is also swapped
+        const bar = await activeClue(page);
+        const activeText = await page.locator('.clue.active .t').innerText();
+        const allHard = Object.values(animals.hard).flat();
+        assert.ok(bar.endsWith(activeText) && allHard.includes(activeText), `hard clue in the bar: ${bar}`);
         await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
         assert.equal(await page.inputValue('#mode'), 'hard', 'mode persists');
+        assert.ok(hardClues.includes(await page.locator('#across-clues .clue >> nth=0 >> .t').innerText()), 'hard clue survives a reload');
 
         await page.selectOption('#mode', 'easy');
         await page.click(cellSel(first.row, first.col));
@@ -242,6 +256,7 @@ describe('desktop play', () => {
         assert.equal(await page.locator(`${cellSel(first.row, first.col)}.incorrect`).count(), 1, 'easy marks wrong letters');
         await page.selectOption('#mode', 'normal');
         assert.equal(await page.locator('td.incorrect').count(), 0);
+        assert.ok(normalClues.includes(await page.locator('#across-clues .clue >> nth=0 >> .t').innerText()), 'normal clue is back');
 
         await page.click('#pencil');
         await page.click(cellSel(first.row, first.col));

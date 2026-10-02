@@ -170,6 +170,18 @@ window.startGame = function (puzzle) {
         }
     }
 
+    // Hard mode shows the harder clue where a word has one
+    function clueText(cl) {
+        return mode === 'hard' && cl.hardClue ? cl.hardClue : cl.clue;
+    }
+
+    function refreshClueText() {
+        Object.values(clues).flat().forEach(cl => {
+            if (cl.el) cl.el.querySelector('.t').textContent = clueText(cl);
+        });
+        if (current) refreshHighlight();
+    }
+
     function buildClues() {
         [ACROSS, DOWN].forEach(o => {
             clues[o].forEach(cl => {
@@ -180,7 +192,7 @@ window.startGame = function (puzzle) {
                 n.textContent = cl.number;
                 const t = document.createElement('span');
                 t.className = 't';
-                t.textContent = cl.clue;
+                t.textContent = clueText(cl);
                 li.append(n, t);
                 li.addEventListener('click', () => {
                     goToClue(cl, o);
@@ -203,7 +215,7 @@ window.startGame = function (puzzle) {
         const cl = clueFor(current.r, current.c, orientation);
         if (cl) {
             cl.el.classList.add('active');
-            activeClueEl.innerHTML = `<b>${cl.number} ${orientation === ACROSS ? 'Across' : 'Down'}</b> ${escapeHtml(cl.clue)}`;
+            activeClueEl.innerHTML = `<b>${cl.number} ${orientation === ACROSS ? 'Across' : 'Down'}</b> ${escapeHtml(clueText(cl))}`;
         } else {
             activeClueEl.textContent = '';
         }
@@ -811,6 +823,7 @@ window.startGame = function (puzzle) {
             cell.td.classList.remove('incorrect');
             if (mode === 'easy' && cell.value !== '' && cell.value !== cell.letter) cell.td.classList.add('incorrect');
         });
+        refreshClueText();
         try { localStorage.setItem(MODE_KEY, mode); } catch (e) { /* ignore */ }
     }
 

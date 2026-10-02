@@ -12,7 +12,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 - **A solve moment**: the grid sweeps green, the time counts up, and a verdict compares you with your earlier solves of the same size
 - **Challenge a friend**: a link to the exact puzzle with your time to beat; they see the target while solving and the result against it when done. No server, it all lives in the link
 - **Stats and streaks** kept in the browser, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
-- **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal
+- **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal and uses harder clues
 - **Pencil mode** for tentative letters, **dark mode**, and **print** for a blank grid or the answer key
 - Works on phones: the grid scales to the screen, the active clue stays pinned at the top, and the keyboard stays open while you move between cells
 - Proper crossword rules: every word crosses another, no side-by-side or end-to-end joins, clues numbered in reading order
@@ -63,7 +63,7 @@ Examples:
 - **Reveal letter** and **Reveal word** fill in answers, shown in blue. Each revealed letter adds 20 seconds to the clock, shown beside the timer and in your result; checking is free
 - **Pencil** (or the `.` key) enters tentative letters shown in grey. **Reset** clears every entry and restarts the timer, after asking
 - **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**, or open **Archive** for a calendar of the current word set with solved days filled in
-- **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal. In every mode a full grid that is not correct shows a note saying so, without saying where
+- **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal and swaps every clue for a harder, more oblique one. In every mode a full grid that is not correct shows a note saying so, without saying where
 - **Print** gives a blank grid with clues. **Print answers** gives the key
 - **Share** on the win banner copies your time and the puzzle link. **Stats** shows solves, streak and times
 - **Dark** switches the theme; by default it follows your system setting
@@ -84,11 +84,15 @@ Each word set is a JSON file in `words/`, listed in `words/index.json`:
   "words": {
     "CAT": ["Purring house pet", "Whiskered animal with nine lives, they say"],
     "DOG": "Loyal companion that barks"
+  },
+  "hard": {
+    "CAT": "Burglar or walk, with a nine-lives reputation",
+    "DOG": "Hot one in a bun, or a hound"
   }
 }
 ```
 
-A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; the shipped sets hold 90 to 135 words, and a 12×12 grid uses 15 to 20 of them. Bigger sets give more varied puzzles but take longer to generate, so the generator makes fewer attempts for them. Add the new file to `words/index.json` and it appears in the word set menu, and in the Mixed set, which is every listed set merged. The Mixed set is far bigger than a grid can use, so each puzzle draws a hand of 150 words chosen by the puzzle number.
+A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. An optional `hard` block holds a harder clue (or list) per word, shown in hard mode; a word without one keeps its normal clue there. The shipped sets have a hard clue for every word, and the tests insist on it. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; the shipped sets hold 90 to 135 words, and a 12×12 grid uses 15 to 20 of them. Bigger sets give more varied puzzles but take longer to generate, so the generator makes fewer attempts for them. Add the new file to `words/index.json` and it appears in the word set menu, and in the Mixed set, which is every listed set merged. The Mixed set is far bigger than a grid can use, so each puzzle draws a hand of 150 words chosen by the puzzle number.
 
 ## How It Works
 
