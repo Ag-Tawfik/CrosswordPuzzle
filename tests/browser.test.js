@@ -173,6 +173,32 @@ describe('desktop play', () => {
         assert.match(clip, /Science Crossword for \d{4}-\d{2}-\d{2}/);
         assert.ok(clip.includes('index.html?set=science'));
 
+        // Challenge a friend: a link to this exact puzzle with the time to beat
+        await page.click('#challenge-button');
+        await page.waitForFunction(() => document.getElementById('challenge-button').innerText === 'Link copied');
+        const challenge = await page.evaluate(() => navigator.clipboard.readText());
+        const seconds = await page.evaluate(() => { const [m, s] = document.getElementById('timer').innerText.split(':'); return Number(m) * 60 + Number(s); });
+        const today = new Date().toISOString().slice(0, 10);
+        assert.match(challenge, /^Science Crossword: can you beat \d+:\d\d\?\n/);
+        const link = challenge.split('\n')[1];
+        assert.ok(link.includes(`set=science&size=12&date=${today}&beat=${seconds}`), `link pins the puzzle and the time: ${link}`);
+
+        // The friend sees the target and, solving faster, beats it; the share text says so
+        const friend = await newPage({ permissions: ['clipboard-read', 'clipboard-write'] });
+        await go(friend, link);
+        await friend.evaluate(() => localStorage.clear());
+        await friend.reload(); await friend.waitForFunction(() => window.__puzzle !== undefined);
+        assert.equal(await friend.locator('#challenge-banner.show').count(), 1);
+        assert.match(await friend.locator('#challenge-target').innerText(), /^\d+:\d\d$/);
+        await solve(friend);
+        assert.equal(await friend.locator('#challenge-banner.show').count(), 0, 'target goes once solved');
+        assert.match(await friend.locator('#win-verdict').innerText(), /^Challenge beaten by \d+:\d\d\. Your first 12×12/);
+        await friend.click('#share-button');
+        await friend.waitForFunction(() => document.getElementById('share-button').innerText === 'Copied');
+        assert.match(await friend.evaluate(() => navigator.clipboard.readText()), /Challenge beaten by/);
+        assert.deepEqual(friend.errors, []);
+        await friend.context().close();
+
         // Without a clipboard the result is offered in a dialog instead of a prompt
         await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('blocked')); });
         await page.click('#share-button');

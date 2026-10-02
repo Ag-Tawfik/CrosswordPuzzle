@@ -8,6 +8,7 @@
 // ?custom=<base64>   a custom word list made on create.html; overrides set
 // ?mini=1            the Mini: a 7x7 of the same set, with its own streak. Overrides size.
 // ?set=mixed         every word set in one pool; each puzzle draws a seeded hand of words
+// ?beat=252          a challenge: a friend's time in seconds to beat on this exact puzzle
 
 (async function () {
     'use strict';
@@ -103,6 +104,7 @@
             daily: puzzleDate === today,
             custom: !!customSet,
             mini,
+            beat: /^\d{1,6}$/.test(params.get('beat') || '') && Number(params.get('beat')) > 0 ? Number(params.get('beat')) : null,
         });
 
         // --- Fill the page ---------------------------------------------------------

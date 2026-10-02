@@ -463,7 +463,8 @@ window.startGame = function (puzzle) {
             if (record && record.isBest) text += '. New best time';
             return text + '.';
         };
-        winVerdictEl.textContent = record ? verdict(record) : '';
+        winVerdictEl.textContent = [challengeNote(), record ? verdict(record) : ''].filter(Boolean).join(' ');
+        challengeBanner.classList.remove('show');
         bannerEl.classList.add('show');
         if (countUpMs <= 0 || elapsed === 0) { winTextEl.textContent = textFor(elapsed); return; }
         winTextEl.textContent = textFor(0); // never a blank banner while the first frame waits
@@ -476,6 +477,58 @@ window.startGame = function (puzzle) {
         };
         requestAnimationFrame(tick);
     }
+
+    // --- Challenges ----------------------------------------------------------------
+    // A link to this exact puzzle carrying a time to beat. The friend sees the
+    // target while solving and the result against it when done.
+
+    const challengeBanner = document.getElementById('challenge-banner');
+    if (puzzle.beat) {
+        document.getElementById('challenge-target').textContent = formatTime(puzzle.beat);
+        challengeBanner.classList.add('show');
+    }
+
+    function challengeNote() {
+        if (!puzzle.beat) return '';
+        if (elapsed < puzzle.beat) return `Challenge beaten by ${formatTime(puzzle.beat - elapsed)}.`;
+        if (elapsed === puzzle.beat) return 'Dead heat with the challenge.';
+        return `Challenge missed by ${formatTime(elapsed - puzzle.beat)}.`;
+    }
+
+    function challengeLink() {
+        const params = new URLSearchParams();
+        if (puzzle.custom) {
+            const custom = new URLSearchParams(window.location.search).get('custom');
+            if (custom) params.set('custom', custom);
+        } else {
+            params.set('set', puzzle.set);
+        }
+        if (puzzle.mini) params.set('mini', '1');
+        else params.set('size', String(puzzle.rows));
+        if (puzzle.date) params.set('date', puzzle.date);
+        else params.set('seed', String(puzzle.seed));
+        params.set('beat', String(elapsed));
+        return `${new URL('index.html', window.location.href)}?${params}`;
+    }
+
+    document.getElementById('challenge-button').addEventListener('click', async () => {
+        const button = document.getElementById('challenge-button');
+        const text = `${puzzle.title}: can you beat ${formatTime(elapsed)}?\n${challengeLink()}`;
+        const touch = window.matchMedia('(pointer: coarse)').matches;
+        try {
+            if (touch && navigator.share) {
+                await navigator.share({ text });
+            } else {
+                await navigator.clipboard.writeText(text);
+                button.textContent = 'Link copied';
+            }
+        } catch (e) {
+            shareText.value = text;
+            shareCopy.textContent = 'Copy';
+            shareDialog.showModal();
+            shareText.select();
+        }
+    });
 
     function verdict(record) {
         const size = puzzle.mini ? 'Mini' : `${puzzle.rows}×${puzzle.rows}`;
@@ -690,6 +743,7 @@ window.startGame = function (puzzle) {
     document.getElementById('share-button').addEventListener('click', async () => {
         const label = puzzle.date ? `for ${puzzle.date}` : `#${puzzle.seed}`;
         let text = `${puzzle.title} ${label} (${puzzle.rows}×${puzzle.rows})\nSolved in ${formatTime(elapsed)}${revealsNote()}`;
+        if (puzzle.beat) text += `\n${challengeNote()}`;
         text += `\n${window.location.href}`;
         const button = document.getElementById('share-button');
         const touch = window.matchMedia('(pointer: coarse)').matches;

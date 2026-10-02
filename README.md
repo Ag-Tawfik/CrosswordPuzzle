@@ -10,6 +10,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 - **Make your own**: paste words and clues on the create page and get a link that holds the whole puzzle
 - **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary, plus a **Mixed** set that draws from all of them so the topic gives nothing away
 - **A solve moment**: the grid sweeps green, the time counts up, and a verdict compares you with your earlier solves of the same size
+- **Challenge a friend**: a link to the exact puzzle with your time to beat; they see the target while solving and the result against it when done. No server, it all lives in the link
 - **Stats and streaks** kept in the browser, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
 - **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal
 - **Pencil mode** for tentative letters, **dark mode**, and **print** for a blank grid or the answer key
@@ -42,6 +43,7 @@ The workflow in `.github/workflows/pages.yml` publishes the repository root to G
 | `date` | A past day's daily puzzle, as `YYYY-MM-DD`. Overrides `seed` | |
 | `custom` | A custom puzzle made on `create.html`. Overrides `set` | |
 | `mini` | `1` for the Mini, a 7×7 of the set. Overrides `size` | |
+| `beat` | A challenge: a time in seconds to beat on this exact puzzle. Made by the **Challenge a friend** button | |
 
 Examples:
 
