@@ -53,14 +53,16 @@
     </div>
 
     <div class="clue-bar">
-        <button type="button" id="prev-word" aria-label="Previous word">&lsaquo;</button>
+        <button type="button" id="prev-word" aria-label="Previous word"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
         <div class="active-clue" id="active-clue" aria-live="polite"></div>
-        <button type="button" id="next-word" aria-label="Next word">&rsaquo;</button>
+        <button type="button" id="next-word" aria-label="Next word"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m7.5 4 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
 
     <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Type letters into the crossword">
 
-    <table id="crossword-grid" aria-label="Crossword grid"></table>
+    <div class="grid-wrap">
+        <table id="crossword-grid" aria-label="Crossword grid"></table>
+    </div>
 
     <div class="controls">
         <div class="control-group needs-check">
