@@ -36,13 +36,14 @@
         </select>
         <button type="submit">Go</button>
         <button type="button" id="new-puzzle" class="primary">Random puzzle</button>
+        <a class="button" id="mini-link" href="index.html?mini=1">Daily Mini</a>
         <a class="button" href="create.html">Create your own</a>
     </form>
 
     <div class="status">
         <span>Time <strong id="timer">0:00</strong></span>
         <span>Filled <strong id="progress">0%</strong></span>
-        <span id="streak-status" hidden>Streak <strong id="streak">0</strong></span>
+        <span id="streak-status" hidden><span id="streak-label">Streak</span> <strong id="streak">0</strong></span>
         <button type="button" id="stats-button" class="link">Stats</button>
         <button type="button" id="calendar-button" class="link">Archive</button>
         <button type="button" id="theme-button" class="link" aria-label="Toggle dark mode">Dark</button>

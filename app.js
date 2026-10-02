@@ -6,6 +6,7 @@
 // ?date=2026-09-30   the daily puzzle for that date (archive). Overrides seed.
 //                    With neither, today's daily puzzle.
 // ?custom=<base64>   a custom word list made on create.html; overrides set
+// ?mini=1            the Mini: a 7x7 of the same set, with its own streak. Overrides size.
 
 (async function () {
     'use strict';
@@ -36,9 +37,11 @@
     try {
         const today = new Date().toISOString().slice(0, 10);
 
+        const mini = params.get('mini') === '1';
         let size = parseInt(params.get('size') || '12', 10);
         if (Number.isNaN(size)) size = 12;
         size = Math.max(8, Math.min(20, size));
+        if (mini) size = 7;
 
         const index = await loadJson('words/index.json');
         if (!Array.isArray(index) || index.length === 0) throw new Error('No word sets found');
@@ -83,19 +86,34 @@
         const puzzle = Object.assign(Crossword.puzzleToObject(grid, result, wordSet, seed), {
             set: setKey,
             setName: wordSet.name,
+            title: `${wordSet.name} ${mini ? 'Mini' : 'Crossword'}`,
             seed,
             date: puzzleDate,
             daily: puzzleDate === today,
             custom: !!customSet,
+            mini,
         });
 
         // --- Fill the page ---------------------------------------------------------
-        document.title = `${wordSet.name} Crossword`;
-        text('h1', `${wordSet.name} Crossword`);
+        document.title = puzzle.title;
+        text('h1', puzzle.title);
+        document.body.classList.toggle('mini', mini);
+        const kind = mini ? 'Mini' : 'puzzle';
         const label = puzzle.daily
-            ? `Daily puzzle for ${formatDate(today)}`
-            : (puzzleDate !== null ? `Daily puzzle for ${formatDate(puzzleDate)}` : `Puzzle #${seed}`);
+            ? `Daily ${kind} for ${formatDate(today)}`
+            : (puzzleDate !== null ? `Daily ${kind} for ${formatDate(puzzleDate)}` : `${mini ? 'Mini' : 'Puzzle'} #${seed}`);
         subtitleEl.textContent = `${label} · ${size}×${size} · ${puzzle.wordCount} words`;
+
+        // The Mini link swaps between the Mini and the full puzzle of the same set
+        const miniLink = document.getElementById('mini-link');
+        if (customSet) {
+            miniLink.hidden = true;
+        } else {
+            const linkParams = new URLSearchParams({ set: setKey });
+            if (!mini) linkParams.set('mini', '1');
+            miniLink.href = `index.html?${linkParams}`;
+            miniLink.textContent = mini ? 'Full puzzle' : 'Daily Mini';
+        }
 
         const setSelect = document.querySelector('select[name=set]');
         setSelect.innerHTML = '';
@@ -115,13 +133,24 @@
         }
 
         const sizeSelect = document.querySelector('select[name=size]');
-        if (![...sizeSelect.options].some(o => Number(o.value) === size)) {
-            const opt = document.createElement('option');
-            opt.value = String(size);
-            opt.textContent = `${size}×${size}`;
-            sizeSelect.appendChild(opt);
+        if (mini) {
+            // The Mini has one size; the form carries the mode instead
+            const sizeControl = sizeSelect.closest('.menu') || sizeSelect;
+            sizeControl.hidden = true;
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'mini';
+            hidden.value = '1';
+            document.getElementById('toolbar').appendChild(hidden);
+        } else {
+            if (![...sizeSelect.options].some(o => Number(o.value) === size)) {
+                const opt = document.createElement('option');
+                opt.value = String(size);
+                opt.textContent = `${size}×${size}`;
+                sizeSelect.appendChild(opt);
+            }
+            sizeSelect.value = String(size);
         }
-        sizeSelect.value = String(size);
 
         const datePicker = document.getElementById('date-picker');
         datePicker.max = today;

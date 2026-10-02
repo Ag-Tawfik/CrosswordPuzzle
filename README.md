@@ -5,6 +5,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 ## Features
 
 - **Daily puzzle** per word set, plus unlimited random puzzles and an archive of past days
+- **Daily Mini**: a 7×7 of the same set with six or seven words, solvable in a minute, with its own streak and archive
 - **Shareable puzzles**: the same puzzle number always gives the same grid
 - **Make your own**: paste words and clues on the create page and get a link that holds the whole puzzle
 - **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary
@@ -39,12 +40,14 @@ The workflow in `.github/workflows/pages.yml` publishes the repository root to G
 | `seed` | Puzzle number. The same number always gives the same puzzle | Today's date (UTC) |
 | `date` | A past day's daily puzzle, as `YYYY-MM-DD`. Overrides `seed` | |
 | `custom` | A custom puzzle made on `create.html`. Overrides `set` | |
+| `mini` | `1` for the Mini, a 7×7 of the set. Overrides `size` | |
 
 Examples:
 
 - `index.html?set=food` today's food puzzle
 - `index.html?set=geography&size=15&seed=4242` a specific, shareable puzzle
 - `index.html?set=animals&date=2026-03-01` the animals puzzle from that day
+- `index.html?set=sports&mini=1` today's sports Mini
 
 ### Playing
 

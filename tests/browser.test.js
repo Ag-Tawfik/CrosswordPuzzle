@@ -430,6 +430,55 @@ describe('creator and archive', () => {
         await page.context().close();
     });
 
+    test('the daily Mini is a 7x7 of the same set with its own streak and archive', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        const miniLink = page.locator('#mini-link');
+        assert.equal(await miniLink.innerText(), 'Daily Mini');
+        assert.ok((await miniLink.getAttribute('href')).includes('set=animals&mini=1'));
+
+        await miniLink.click();
+        await page.waitForFunction(() => window.__puzzle !== undefined && window.__puzzle.mini);
+        const p = await puzzleData(page);
+        assert.equal(p.rows, 7);
+        assert.ok(p.wordCount >= 5, `a Mini has a handful of words, got ${p.wordCount}`);
+        assert.equal(await page.locator('h1').innerText(), 'Animals Mini');
+        assert.match(await page.locator('.subtitle').innerText(), /^Daily Mini for .* · 7×7 · \d+ words$/);
+        assert.ok(await page.locator('select[name=size]').isHidden(), 'no size choice in the Mini');
+        assert.equal(await miniLink.innerText(), 'Full puzzle');
+        assert.ok(!(await miniLink.getAttribute('href')).includes('mini'));
+        assert.ok(await page.evaluate(() => document.body.classList.contains('mini')));
+
+        // Random and the date picker stay in the Mini
+        await page.click('#new-puzzle');
+        await page.waitForFunction(() => window.__puzzle !== undefined && /seed=\d+/.test(location.search));
+        assert.ok(page.url().includes('mini=1'));
+        assert.equal((await puzzleData(page)).rows, 7);
+        assert.match(await page.locator('.subtitle').innerText(), /^Mini #\d+/);
+
+        // Solving today's Mini starts the Mini streak, not the full streak
+        await go(page, base + 'index.html?set=animals&mini=1');
+        await solve(page);
+        assert.match(await page.locator('#win-text').innerText(), /^Solved in/);
+        assert.equal(await page.locator('#streak').innerText(), '1');
+        assert.equal(await page.locator('#streak-label').innerText(), 'Mini streak');
+        await page.click('#stats-button');
+        const stats = (await page.locator('#stats-list').innerText()).replace(/\s+/g, ' ');
+        assert.match(stats, /Current streak 0 days Mini streak 1 day/);
+        await page.keyboard.press('Escape');
+        await page.click('#calendar-button');
+        assert.match(await page.locator('#calendar-summary').innerText(), /Animals Mini: 1 solved/);
+        assert.ok((await page.locator('#calendar-grid .day.solved').getAttribute('href')).includes('mini=1'));
+        await page.keyboard.press('Escape');
+
+        await go(page, base + 'index.html?set=animals');
+        assert.ok(await page.locator('#streak-status').isHidden(), 'the full puzzle streak is untouched');
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
     test('the archive calendar shows solved days and links to past puzzles', async () => {
         const page = await newPage();
         await go(page, base + 'index.html?set=food&date=2026-03-01');
