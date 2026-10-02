@@ -41,7 +41,7 @@
     </form>
 
     <div class="status">
-        <span>Time <strong id="timer">0:00</strong></span>
+        <span>Time <strong id="timer">0:00</strong><span id="penalty" class="penalty" aria-live="polite"></span></span>
         <span>Filled <strong id="progress">0%</strong></span>
         <span id="streak-status" hidden><span id="streak-label">Streak</span> <strong id="streak">0</strong></span>
         <button type="button" id="stats-button" class="link">Stats</button>
@@ -72,8 +72,8 @@
         <div class="control-group needs-check">
             <button type="button" id="check-word" class="needs-check">Check word</button>
             <button type="button" id="check-all" class="needs-check">Check all</button>
-            <button type="button" id="reveal-letter" class="needs-check">Reveal letter</button>
-            <button type="button" id="reveal-word" class="needs-check">Reveal word</button>
+            <button type="button" id="reveal-letter" class="needs-check" title="Adds 20 seconds">Reveal letter</button>
+            <button type="button" id="reveal-word" class="needs-check" title="Adds 20 seconds a letter">Reveal word</button>
         </div>
         <div class="control-group">
             <button type="button" id="pencil" aria-pressed="false">Pencil</button>
@@ -82,7 +82,7 @@
             <button type="button" id="print-answers">Print answers</button>
         </div>
     </div>
-    <p class="help">Tap or click a cell and type. Arrow keys move. Enter, Space, or tapping the selected cell switches between across and down. Progress is saved in this browser.</p>
+    <p class="help">Tap or click a cell and type. Arrow keys move. Enter, Space, or tapping the selected cell switches between across and down. Revealing a letter adds 20 seconds; checking is free. Progress is saved in this browser.</p>
 
     <div class="clues">
         <section>

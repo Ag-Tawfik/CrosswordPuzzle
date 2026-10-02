@@ -428,6 +428,16 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 
 .status strong { color: var(--fg); font-weight: 600; }
 
+/* The cost of a reveal, popping up beside the timer */
+.penalty { display: inline-block; margin-left: 6px; color: var(--red); font-weight: 600; opacity: 0; }
+.penalty.show { animation: penalty-pop 1.4s ease-out forwards; }
+@keyframes penalty-pop {
+    0% { opacity: 0; transform: translateY(4px); }
+    15% { opacity: 1; transform: translateY(0); }
+    70% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-6px); }
+}
+
 /* Groups of related game buttons */
 .controls { margin: 18px auto 6px; gap: 8px 12px; }
 .control-group {
@@ -822,6 +832,7 @@ dialog .alert-actions button.primary:hover { background: var(--accent-hover); }
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; }
+    .penalty.show { animation: none; opacity: 1; }
     button:active, .button:active { transform: none; }
 }
 

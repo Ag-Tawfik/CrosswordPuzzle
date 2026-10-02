@@ -36,6 +36,9 @@ window.startGame = function (puzzle) {
     let orientation = ACROSS;
     let elapsed = 0;           // seconds
     let reveals = 0;           // letters revealed, for the record
+    const REVEAL_PENALTY = 20; // seconds added to the clock per revealed letter
+    const penaltyEl = document.getElementById('penalty');
+    let penaltyTimer = null;
     let solved = false;
     let pencilMode = false;
     let mode = 'normal';
@@ -385,8 +388,12 @@ window.startGame = function (puzzle) {
         cell.td.classList.add(cell.value === cell.letter ? 'correct' : 'incorrect');
     }
 
+    // A reveal costs time, so it is a decision rather than a free answer
     function reveal(cell) {
-        if (cell.value !== cell.letter) reveals++;
+        if (cell.value !== cell.letter) {
+            reveals++;
+            elapsed += REVEAL_PENALTY;
+        }
         setValue(cell, cell.letter);
         cell.td.classList.add('correct', 'revealed');
     }
@@ -402,9 +409,25 @@ window.startGame = function (puzzle) {
         saveState();
     }
 
+    // Shows what the reveals just made cost, and the new time at once
+    function chargeReveals(count) {
+        if (count <= 0) return;
+        timerEl.textContent = formatTime(elapsed);
+        penaltyEl.textContent = `+${count * REVEAL_PENALTY}s`;
+        penaltyEl.classList.remove('show');
+        void penaltyEl.offsetWidth; // restart the animation when it fires twice in a row
+        penaltyEl.classList.add('show');
+        clearTimeout(penaltyTimer);
+        penaltyTimer = setTimeout(() => penaltyEl.classList.remove('show'), 1500);
+    }
+
+    function revealsNote() {
+        if (reveals === 0) return '';
+        return `, including ${formatTime(reveals * REVEAL_PENALTY)} for ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
+    }
+
     function showWin(record) {
-        let text = `Solved in ${formatTime(elapsed)}`;
-        if (reveals > 0) text += ` with ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
+        let text = `Solved in ${formatTime(elapsed)}${revealsNote()}`;
         if (record && record.streak > 1) text += `. Streak: ${record.streak} days`;
         if (record && record.isBest) text += '. New best time';
         winTextEl.textContent = text + '.';
@@ -610,8 +633,7 @@ window.startGame = function (puzzle) {
 
     document.getElementById('share-button').addEventListener('click', async () => {
         const label = puzzle.date ? `for ${puzzle.date}` : `#${puzzle.seed}`;
-        let text = `${puzzle.title} ${label} (${puzzle.rows}×${puzzle.rows})\nSolved in ${formatTime(elapsed)}`;
-        if (reveals > 0) text += ` with ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
+        let text = `${puzzle.title} ${label} (${puzzle.rows}×${puzzle.rows})\nSolved in ${formatTime(elapsed)}${revealsNote()}`;
         text += `\n${window.location.href}`;
         const button = document.getElementById('share-button');
         const touch = window.matchMedia('(pointer: coarse)').matches;
@@ -727,15 +749,19 @@ window.startGame = function (puzzle) {
 
     onButton('reveal-letter', () => {
         if (!current || solved) return;
+        const before = reveals;
         reveal(cellAt(current.r, current.c));
         afterEdit();
+        chargeReveals(reveals - before);
         if (!solved) advance();
     });
 
     onButton('reveal-word', () => {
         if (!current || solved) return;
+        const before = reveals;
         wordCells(current.r, current.c, orientation).forEach(reveal);
         afterEdit();
+        chargeReveals(reveals - before);
         if (!solved) nextClue(1, true);
     });
 

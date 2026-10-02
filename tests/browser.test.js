@@ -138,12 +138,24 @@ describe('desktop play', () => {
         await page.click('#check-word');
         assert.equal(await page.locator('td.incorrect').count(), 1);
 
+        // A reveal costs 20 seconds, shown at once; revealing a word charges only the letters it fills
+        await page.click(`${cellSel(first.row, first.col)}`);
+        const secondsBefore = await page.evaluate(() => { const [m, s] = document.getElementById('timer').innerText.split(':'); return Number(m) * 60 + Number(s); });
+        await page.click('#reveal-letter');
+        const secondsAfter = await page.evaluate(() => { const [m, s] = document.getElementById('timer').innerText.split(':'); return Number(m) * 60 + Number(s); });
+        assert.ok(secondsAfter >= secondsBefore + 20 && secondsAfter < secondsBefore + 25, `reveal added 20s, went ${secondsBefore} -> ${secondsAfter}`);
+        assert.equal(await page.locator('#penalty').innerText(), '+20s');
+        await page.click(`${cellSel(first.row, first.col)}`);
+        await page.click('#reveal-word');
+        assert.equal(await page.locator('#penalty').innerText(), `+${(first.length - 1) * 20}s`, 'the already revealed letter is not charged again');
         await page.click(`${cellSel(first.row, first.col)}`);
         await page.click('#reveal-letter');
+        const secondsLater = await page.evaluate(() => { const [m, s] = document.getElementById('timer').innerText.split(':'); return Number(m) * 60 + Number(s); });
+        assert.ok(secondsLater < secondsBefore + first.length * 20 + 5, 'revealing a correct letter costs nothing');
         await solve(page);
 
         const win = await page.locator('#win-text').innerText();
-        assert.match(win, /^Solved in \d+:\d\d with 1 revealed letter/);
+        assert.match(win, new RegExp(`^Solved in \\d+:\\d\\d, including ${first.length < 3 ? '0:' : ''}\\d:\\d\\d for ${first.length} revealed letters`));
         assert.equal(await page.locator('#streak').innerText(), '1');
         assert.equal(await page.locator('#progress').innerText(), '100%');
 
