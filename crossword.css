@@ -61,7 +61,14 @@
     --success-fg: #1f7a3a;
     --warn-bg: rgba(255, 149, 0, 0.14);
     --warn-fg: #8a5300;
+
+    /* Up-and-down chevron for pickers, coloured like --muted */
+    --picker-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5' fill='none' stroke='%236e6e73' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
 }
+
+/* Native popups, pickers and scrollbars follow the chosen appearance */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 /* Dark appearance, matching the system or chosen by the user.
    The grid inverts too: dark cells, light letters, deep-tinted states. */
@@ -111,6 +118,7 @@
         --success-fg: #7ee29a;
         --warn-bg: rgba(255, 159, 10, 0.18);
         --warn-fg: #ffc96b;
+        --picker-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5' fill='none' stroke='%2398989d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     }
 }
 
@@ -159,6 +167,7 @@
     --success-fg: #7ee29a;
     --warn-bg: rgba(255, 159, 10, 0.18);
     --warn-fg: #ffc96b;
+    --picker-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5' fill='none' stroke='%2398989d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
 }
 
 /* True hairlines on high-density displays */
@@ -275,12 +284,16 @@ select, button, .button { cursor: pointer; -webkit-tap-highlight-color: transpar
 
 select {
     padding-right: 32px;
+    max-width: 100%;
     appearance: none;
     -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%236e6e73' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-    background-position: right 11px center;
+    background-image: var(--picker-chevron);
+    background-position: right 10px center;
     background-size: 12px 12px;
     background-repeat: no-repeat;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 input[type="date"] { font-variant-numeric: tabular-nums; }
@@ -656,7 +669,7 @@ dialog form button:hover { background: var(--accent-soft-hover); }
     h1 { font-size: 28px; margin-top: 22px; }
     .subtitle { font-size: 14px; }
     .toolbar { padding: 8px; gap: 6px; border-radius: var(--radius); }
-    .toolbar select, .toolbar input[type="date"], .toolbar button, .toolbar .button { flex: 1 1 42%; min-height: 42px; font-size: 14px; padding: 0 10px; }
+    .toolbar select, .toolbar input[type="date"], .toolbar button, .toolbar .button { flex: 1 1 42%; min-width: 0; min-height: 42px; font-size: 14px; padding: 0 10px; }
     .toolbar select { padding-right: 30px; }
     .status { gap: 4px 12px; }
     .help { display: none; }
