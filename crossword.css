@@ -714,6 +714,18 @@ dialog form { margin-top: 18px; }
 dialog form button { width: 100%; min-height: 44px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 dialog form button:hover { background: var(--accent-soft-hover); }
 
+/* Alerts: a short question with two answers, the safe one focused */
+dialog.alert { max-width: 300px; padding: 20px; text-align: center; }
+dialog.alert h2 { font-size: 17px; margin: 0 0 6px; }
+dialog.alert p { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); }
+dialog .alert-actions { display: flex; gap: 8px; margin-top: 18px; }
+dialog .alert-actions button { flex: 1 1 0; width: auto; min-height: 40px; }
+dialog .alert-actions button.destructive { background: var(--red); color: #ffffff; }
+dialog .alert-actions button.destructive:hover { background: var(--red); filter: brightness(0.92); }
+dialog .alert-actions button.primary { background: var(--accent); color: var(--accent-fg); }
+dialog .alert-actions button.primary:hover { background: var(--accent-hover); }
+#share-text { width: 100%; max-height: 160px; margin-top: 12px; padding: 8px 10px; font-size: 13px; font-weight: 400; line-height: 1.4; text-align: left; resize: none; }
+
 /* ------------------------------------------------------------------
    Create page
    ------------------------------------------------------------------ */

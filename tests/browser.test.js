@@ -153,6 +153,13 @@ describe('desktop play', () => {
         assert.match(clip, /Science Crossword for \d{4}-\d{2}-\d{2}/);
         assert.ok(clip.includes('index.html?set=science'));
 
+        // Without a clipboard the result is offered in a dialog instead of a prompt
+        await page.evaluate(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('blocked')); });
+        await page.click('#share-button');
+        assert.ok(await page.locator('#share-dialog[open]').count() === 1, 'share fallback dialog opens');
+        assert.match(await page.inputValue('#share-text'), /Solved in \d+:\d\d/);
+        await page.keyboard.press('Escape');
+
         await page.click('#stats-button');
         const stats = (await page.locator('#stats-list').innerText()).replace(/\s+/g, ' ');
         assert.match(stats, /Puzzles solved 1 Current streak 1 day/);
@@ -196,6 +203,23 @@ describe('desktop play', () => {
         await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
         assert.equal(await page.locator(`${cellSel(first.row, first.col)}.pencil`).count(), 1, 'pencil persists');
         assert.equal(await letterAt(page, first.row, first.col), right);
+
+        // Reset asks in a dialog: Escape and Enter keep the entries, the Reset button clears them
+        await page.click('#reset-puzzle');
+        assert.equal(await page.locator('#reset-dialog[open]').count(), 1, 'reset asks first');
+        await page.keyboard.press('Escape');
+        assert.equal(await letterAt(page, first.row, first.col), right, 'escape keeps the entries');
+        await page.click('#reset-puzzle');
+        assert.equal(await page.evaluate(() => document.activeElement.value), 'cancel', 'cancel is the default');
+        await page.keyboard.press('Enter');
+        assert.equal(await letterAt(page, first.row, first.col), right, 'enter is cancel');
+        await page.click('#reset-puzzle');
+        await page.click('#reset-dialog button[value="reset"]');
+        // The dialog's close event, which performs the reset, is queued by the browser
+        await page.waitForFunction(() => !document.getElementById('reset-dialog').open && document.activeElement.id === 'kbd');
+        assert.equal(await letterAt(page, first.row, first.col), '', 'reset cleared the grid');
+        assert.equal(await page.locator('#timer').innerText(), '0:00');
+        assert.equal(await page.evaluate(() => document.activeElement.id), 'kbd', 'focus returns to the grid');
 
         await page.click('#theme-button');
         assert.equal(await page.evaluate(() => document.documentElement.dataset.theme), 'dark');
