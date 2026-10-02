@@ -1,5 +1,7 @@
 # Crossword Puzzle
 
+**Play it: https://ag-tawfik.github.io/CrosswordPuzzle/**
+
 A crossword game that runs entirely in the browser. Every day gets a fresh puzzle per category, any puzzle can be shared by its number, you can build your own from a list of words, and progress is saved locally. No server, no build step: it is static HTML, CSS and JavaScript, hosted on GitHub Pages.
 
 ## Features
@@ -29,7 +31,7 @@ then open http://127.0.0.1:8000/ in a browser. Opening the file directly from di
 
 ### GitHub Pages
 
-The workflow in `.github/workflows/pages.yml` publishes the repository root to GitHub Pages on every push to `main`. To turn it on once: in the repository settings, under Pages, set the source to **GitHub Actions**. The site then lives at `https://<owner>.github.io/<repo>/`.
+The workflow in `.github/workflows/pages.yml` publishes the repository root to GitHub Pages on every push to `main`. To turn it on once: in the repository settings, under Pages, set the source to **GitHub Actions**. The site then lives at `https://<owner>.github.io/<repo>/`; this one is at https://ag-tawfik.github.io/CrosswordPuzzle/.
 
 ## Usage
 
