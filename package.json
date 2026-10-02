@@ -3,7 +3,7 @@
   "private": true,
   "description": "A static crossword game. No build step; the tests need Node and Playwright.",
   "scripts": {
-    "lint": "node --check generator.js && node --check crossword.js && node --check app.js && node --check create.js",
+    "lint": "node --check generator.js && node --check crossword.js && node --check app.js && node --check create.js && node --check menu.js",
     "test": "npm run lint && npm run test:generator && npm run test:browser",
     "test:generator": "node --test tests/generator.test.js",
     "test:browser": "node --test tests/browser.test.js",

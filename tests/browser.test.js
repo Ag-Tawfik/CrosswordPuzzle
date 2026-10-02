@@ -211,6 +211,60 @@ describe('desktop play', () => {
         assert.deepEqual(page.errors, []);
         await page.context().close();
     });
+
+    test('desktop menus drive the native selects', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals&seed=5');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        assert.equal(await page.locator('.menu.enhanced').count(), 3, 'set, size and mode are menus');
+        assert.ok(await page.locator('select[name=set]').isVisible(), 'the select is still there for forms and tests');
+
+        // Labels reflect what app.js put in the selects after load
+        const setButton = page.locator('.menu-button[aria-label="Word set"]');
+        const modeButton = page.locator('.menu-button[aria-label="Difficulty"]');
+        assert.equal(await setButton.innerText(), 'Animals');
+        assert.equal(await modeButton.innerText(), 'Normal');
+
+        // Keyboard: open, move, choose; the change reaches the game
+        await modeButton.click();
+        assert.equal(await modeButton.getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('.menu-list:visible li[aria-selected="true"]').innerText(), 'Normal');
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('Enter');
+        assert.equal(await page.inputValue('#mode'), 'hard');
+        assert.equal(await modeButton.innerText(), 'Hard');
+        assert.equal(await modeButton.getAttribute('aria-expanded'), 'false');
+        assert.ok(await page.locator('#check-word').isHidden(), 'the change event applied hard mode');
+        assert.equal(await page.evaluate(() => document.activeElement.id), 'kbd', 'the game moves focus to the grid after a mode change, as with a native select');
+
+        // Escape closes without choosing; a letter jumps while open
+        await modeButton.click();
+        await page.keyboard.press('e');
+        assert.equal(await page.locator('.menu-list:visible li.active').innerText(), 'Easy');
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('.menu-list:visible').count(), 0);
+        assert.equal(await page.inputValue('#mode'), 'hard', 'escape keeps the value');
+
+        // Mouse: the set menu lists every word set and clicking one selects it
+        await setButton.click();
+        assert.equal(await page.locator('.menu-list:visible li').count(), await page.locator('select[name=set] option').count());
+        await page.locator('.menu-list:visible li', { hasText: 'Geography' }).click();
+        assert.equal(await page.inputValue('select[name=set]'), 'geography');
+        assert.equal(await setButton.innerText(), 'Geography');
+        assert.equal(await page.evaluate(() => document.activeElement.getAttribute('aria-label')), 'Word set', 'focus stays on the button');
+
+        // Clicking elsewhere closes an open menu
+        await setButton.click();
+        await page.mouse.click(5, 5);
+        assert.equal(await page.locator('.menu-list:visible').count(), 0);
+
+        // Selecting through the native select, as tests and scripts do, updates the button
+        await page.selectOption('#mode', 'easy');
+        assert.equal(await modeButton.innerText(), 'Easy');
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
 });
 
 describe('phone', () => {
@@ -222,6 +276,8 @@ describe('phone', () => {
 
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), 'no horizontal scroll');
         assert.notEqual(await page.evaluate(() => document.activeElement.id), 'kbd', 'keyboard not forced open on load');
+        assert.equal(await page.locator('.menu.enhanced').count(), 0, 'phones keep the native selects');
+        assert.ok(await page.locator('select[name=set]').isVisible());
 
         const p = await puzzleData(page);
         const first = p.across[0];
