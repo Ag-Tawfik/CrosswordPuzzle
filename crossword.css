@@ -714,6 +714,43 @@ dialog form { margin-top: 18px; }
 dialog form button { width: 100%; min-height: 44px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 dialog form button:hover { background: var(--accent-soft-hover); }
 
+/* Archive calendar */
+dialog.calendar { max-width: 360px; }
+.calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.calendar-head h2 { margin: 0; font-size: 17px; text-align: center; flex: 1 1 auto; }
+.calendar-head button { flex: 0 0 32px; width: 32px; min-height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); border-radius: 8px; }
+.calendar-head button svg { width: 16px; height: 16px; }
+.calendar-head button:disabled { opacity: 0.35; cursor: default; }
+.calendar-head button:disabled:hover { background: var(--accent-soft); }
+#calendar-summary { margin: 6px 0 0; text-align: center; }
+.calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 12px; }
+.calendar-grid .wd { text-align: center; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding: 2px 0 4px; }
+.calendar-grid .day {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--fg);
+    text-decoration: none;
+    transition: background-color 120ms ease;
+}
+.calendar-grid a.day:hover { background: var(--fill); text-decoration: none; }
+.calendar-grid .day.solved { background: var(--accent); color: var(--accent-fg); font-weight: 600; }
+.calendar-grid a.day.solved:hover { background: var(--accent-hover); }
+.calendar-grid .day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+.calendar-grid .day.solved.today { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 4px var(--surface); }
+.calendar-grid .day.current { font-weight: 700; }
+.calendar-grid .day.future { color: var(--muted); opacity: 0.4; }
+.calendar-grid .day.other::after { content: ""; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent); }
+.calendar-grid .day.solved.other::after { background: var(--accent-fg); }
+dialog.calendar p.muted { font-size: 12px; }
+dialog.calendar > p.muted:last-of-type { margin: 12px 0 0; }
+
 /* Alerts: a short question with two answers, the safe one focused */
 dialog.alert { max-width: 300px; padding: 20px; text-align: center; }
 dialog.alert h2 { font-size: 17px; margin: 0 0 6px; }

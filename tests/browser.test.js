@@ -429,4 +429,55 @@ describe('creator and archive', () => {
         assert.equal((await puzzleData(page)).seed, 20260301);
         await page.context().close();
     });
+
+    test('the archive calendar shows solved days and links to past puzzles', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=food&date=2026-03-01');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+
+        await page.click('#calendar-button');
+        assert.equal(await page.locator('#calendar-dialog[open]').count(), 1);
+        assert.equal(await page.locator('#calendar-title').innerText(), 'March 2026', 'opens on the puzzle\'s month');
+        assert.equal(await page.locator('#calendar-grid .day.solved').count(), 0, 'nothing solved yet');
+        assert.equal(await page.locator('#calendar-grid a.day').count(), 31, 'every day of a past month is a link');
+        assert.ok((await page.locator('#calendar-grid a.day').first().getAttribute('href')).includes('set=food&size=12&date=2026-03-01'));
+        assert.equal(await page.locator('#calendar-grid .wd').first().innerText(), 'M', 'weeks start on Monday');
+        await page.click('#calendar-prev');
+        assert.equal(await page.locator('#calendar-title').innerText(), 'February 2026');
+        assert.equal(await page.locator('#calendar-grid a.day').count(), 28);
+        await page.keyboard.press('Escape');
+
+        await solve(page);
+        await page.click('#calendar-button');
+        const solved = page.locator('#calendar-grid .day.solved');
+        assert.equal(await solved.count(), 1, 'the solved day is filled');
+        assert.equal(await solved.innerText(), '1');
+        assert.match(await page.locator('#calendar-summary').innerText(), /Food & Drink: 1 solved this month/);
+        await page.keyboard.press('Escape');
+
+        // Another set on the same day shows as a dot, not as solved; today is ringed and later days are not links
+        await go(page, base + 'index.html?set=animals&date=2026-03-01');
+        await page.click('#calendar-button');
+        assert.equal(await page.locator('#calendar-grid .day.solved').count(), 0);
+        assert.equal(await page.locator('#calendar-grid .day.other').count(), 1);
+        while (!(await page.locator('#calendar-next').isDisabled())) await page.click('#calendar-next');
+        assert.equal(await page.locator('#calendar-grid .day.today').count(), 1);
+        assert.equal(await page.locator('#calendar-grid a.day.future').count(), 0, 'future days are not links');
+        await page.keyboard.press('Escape');
+
+        // Stats saved before the day record existed are read back from the history
+        await page.evaluate(() => {
+            const s = JSON.parse(localStorage.getItem('crossword:stats'));
+            delete s.days;
+            s.history.push({ id: 'old', when: '2026-02-10', set: 'Animals', seed: 20260210, size: 12, time: 60, reveals: 0 });
+            localStorage.setItem('crossword:stats', JSON.stringify(s));
+        });
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        await page.click('#calendar-button');
+        await page.click('#calendar-prev');
+        assert.equal(await page.locator('#calendar-grid .day.solved').innerText(), '10', 'legacy daily solve inferred from its seed');
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
 });

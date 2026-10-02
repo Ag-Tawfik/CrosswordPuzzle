@@ -8,7 +8,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 - **Shareable puzzles**: the same puzzle number always gives the same grid
 - **Make your own**: paste words and clues on the create page and get a link that holds the whole puzzle
 - **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary
-- **Stats and streaks** kept in the browser, with a share button for your result
+- **Stats and streaks** kept in the browser, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
 - **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal
 - **Pencil mode** for tentative letters, **dark mode**, and **print** for a blank grid or the answer key
 - Works on phones: the grid scales to the screen, the active clue stays pinned at the top, and the keyboard stays open while you move between cells
@@ -56,7 +56,7 @@ Examples:
 - **Check word** and **Check all** mark cells green or red without changing them
 - **Reveal letter** and **Reveal word** fill in answers, shown in blue
 - **Pencil** (or the `.` key) enters tentative letters shown in grey. **Reset** clears every entry and restarts the timer, after asking
-- **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**
+- **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**, or open **Archive** for a calendar of the current word set with solved days filled in
 - **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal. In every mode a full grid that is not correct shows a note saying so, without saying where
 - **Print** gives a blank grid with clues. **Print answers** gives the key
 - **Share** on the win banner copies your time and the puzzle link. **Stats** shows solves, streak and times

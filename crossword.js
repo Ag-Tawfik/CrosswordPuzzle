@@ -430,7 +430,25 @@ window.startGame = function (puzzle) {
             streak: s.streak || 0,
             lastDaily: s.lastDaily || null,
             history: Array.isArray(s.history) ? s.history : [],
+            days: daysFromStats(s),
         };
+    }
+
+    // Which word sets were solved on which puzzle date, as {date: [set name, ...]}.
+    // Kept apart from the history, which is capped. Stats saved before this
+    // record existed are read back from their history: a daily's seed is its date.
+    function daysFromStats(s) {
+        if (s.days && typeof s.days === 'object' && !Array.isArray(s.days)) return s.days;
+        const days = {};
+        for (const h of Array.isArray(s.history) ? s.history : []) {
+            const m = /^(20\d\d)(\d\d)(\d\d)$/.exec(String(h.seed));
+            if (!m) continue;
+            const date = `${m[1]}-${m[2]}-${m[3]}`;
+            if (Number.isNaN(Date.parse(date + 'T00:00:00Z'))) continue;
+            days[date] = days[date] || [];
+            if (!days[date].includes(h.set)) days[date].push(h.set);
+        }
+        return days;
     }
 
     // Called once per solved puzzle. Returns the streak after this solve and
@@ -453,6 +471,11 @@ window.startGame = function (puzzle) {
         if (isBest) stats.best = elapsed;
         stats.history.unshift({ id, when: today, set: puzzle.setName, seed: puzzle.seed, size: puzzle.rows, time: elapsed, reveals });
         stats.history = stats.history.slice(0, 50);
+        if (puzzle.date) {
+            const list = stats.days[puzzle.date] || [];
+            if (!list.includes(puzzle.setName)) list.push(puzzle.setName);
+            stats.days[puzzle.date] = list;
+        }
         writeJson(STATS_KEY, stats);
         refreshStreak();
         return { streak: stats.streak, isBest };
@@ -494,6 +517,84 @@ window.startGame = function (puzzle) {
         document.querySelectorAll('#stats-dialog .recent').forEach(el => el.remove());
         showStats();
     });
+
+    // --- Archive calendar -----------------------------------------------------------
+    // A month of this word set's daily puzzles: solved days filled, today ringed,
+    // every past day a link to that day's puzzle at the current size.
+
+    const calendarDialog = document.getElementById('calendar-dialog');
+    const calendarButton = document.getElementById('calendar-button');
+    const calendarGrid = document.getElementById('calendar-grid');
+    const calendarTitle = document.getElementById('calendar-title');
+    const calendarSummary = document.getElementById('calendar-summary');
+    const calendarPrev = document.getElementById('calendar-prev');
+    const calendarNext = document.getElementById('calendar-next');
+    const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    let calendarMonth = null; // {year, month} with month 1-12
+
+    function monthOf(dateStr) {
+        return { year: Number(dateStr.slice(0, 4)), month: Number(dateStr.slice(5, 7)) };
+    }
+
+    function shiftMonth(ym, by) {
+        const d = new Date(Date.UTC(ym.year, ym.month - 1 + by, 1));
+        return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
+    }
+
+    function dateString(year, month, day) {
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function renderCalendar() {
+        const { year, month } = calendarMonth;
+        const today = todayUtc();
+        const thisMonth = monthOf(today);
+        const days = loadStats().days;
+        const first = new Date(Date.UTC(year, month - 1, 1));
+        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        const lead = (first.getUTCDay() + 6) % 7; // Monday first
+
+        calendarTitle.textContent = first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        calendarNext.disabled = year > thisMonth.year || (year === thisMonth.year && month >= thisMonth.month);
+
+        const parts = WEEKDAYS.map(d => `<span class="wd" aria-hidden="true">${d}</span>`);
+        for (let i = 0; i < lead; i++) parts.push('<span class="day blank"></span>');
+        let solvedCount = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = dateString(year, month, day);
+            const sets = days[date] || [];
+            const solved = sets.includes(puzzle.setName);
+            if (solved) solvedCount++;
+            const classes = ['day'];
+            if (solved) classes.push('solved');
+            if (sets.some(name => name !== puzzle.setName)) classes.push('other');
+            if (date === today) classes.push('today');
+            if (date === puzzle.date) classes.push('current');
+            if (date > today) {
+                classes.push('future');
+                parts.push(`<span class="${classes.join(' ')}">${day}</span>`);
+            } else {
+                const params = new URLSearchParams({ set: puzzle.set, size: String(puzzle.rows), date });
+                const label = `${solved ? 'Solved, ' : ''}${new Date(date + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
+                parts.push(`<a class="${classes.join(' ')}" href="index.html?${params}" aria-label="${escapeHtml(label)}">${day}</a>`);
+            }
+        }
+        calendarGrid.innerHTML = parts.join('');
+        calendarSummary.textContent = `${puzzle.setName}: ${solvedCount} solved this month`;
+    }
+
+    calendarPrev.addEventListener('click', () => { calendarMonth = shiftMonth(calendarMonth, -1); renderCalendar(); });
+    calendarNext.addEventListener('click', () => { calendarMonth = shiftMonth(calendarMonth, 1); renderCalendar(); });
+
+    if (puzzle.custom) {
+        calendarButton.hidden = true; // a custom puzzle has no daily archive
+    } else {
+        calendarButton.addEventListener('click', () => {
+            calendarMonth = monthOf(puzzle.date || todayUtc());
+            renderCalendar();
+            calendarDialog.showModal();
+        });
+    }
 
     // --- Share ----------------------------------------------------------------------
 

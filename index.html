@@ -44,6 +44,7 @@
         <span>Filled <strong id="progress">0%</strong></span>
         <span id="streak-status" hidden>Streak <strong id="streak">0</strong></span>
         <button type="button" id="stats-button" class="link">Stats</button>
+        <button type="button" id="calendar-button" class="link">Archive</button>
         <button type="button" id="theme-button" class="link" aria-label="Toggle dark mode">Dark</button>
     </div>
 
@@ -97,6 +98,18 @@
         <h2>Your stats</h2>
         <dl id="stats-list"></dl>
         <p class="muted">Stored in this browser only.</p>
+        <form method="dialog"><button type="submit">Close</button></form>
+    </dialog>
+
+    <dialog id="calendar-dialog" class="calendar" aria-labelledby="calendar-title">
+        <div class="calendar-head">
+            <button type="button" id="calendar-prev" aria-label="Previous month"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <h2 id="calendar-title">Archive</h2>
+            <button type="button" id="calendar-next" aria-label="Next month"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m7.5 4 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        </div>
+        <p class="muted" id="calendar-summary"></p>
+        <div class="calendar-grid" id="calendar-grid"></div>
+        <p class="muted">Filled days are solved. A dot means another word set was solved that day. Tap a day to play it.</p>
         <form method="dialog"><button type="submit">Close</button></form>
     </dialog>
 
