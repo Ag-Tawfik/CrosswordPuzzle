@@ -94,6 +94,32 @@ describe('desktop play', () => {
         await page.context().close();
     });
 
+    test('finishing a word whose last letter a crossing already filled moves straight on', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals&seed=5');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        const p = await puzzleData(page);
+        // An across word whose last cell is also in a down word
+        const pick = p.across.find(a => p.down.some(d => d.col === a.col + a.length - 1 && a.row >= d.row && a.row < d.row + d.length));
+        assert.ok(pick, 'a crossing at the end of an across word');
+        const last = [pick.row, pick.col + pick.length - 1];
+        await page.click(cellSel(...last));
+        await page.keyboard.press(p.cells[last[0]][last[1]].letter);
+        const i = p.across.findIndex(a => a.row === pick.row && a.col === pick.col);
+        await page.click(`#across-clues .clue >> nth=${i}`);
+        for (let k = 0; k < pick.length - 1; k++) await page.keyboard.press(p.cells[pick.row][pick.col + k].letter);
+        const word = Array.from({ length: pick.length }, (_, k) => p.cells[pick.row][pick.col + k].letter).join('');
+        assert.equal(await rowText(page, pick.row, pick.col, pick.length), word, 'the word is complete');
+        const cur = await page.evaluate(() => { const td = document.querySelector('td.current'); return [Number(td.dataset.row), Number(td.dataset.col)]; });
+        assert.ok(!(cur[0] === pick.row && cur[1] >= pick.col && cur[1] < pick.col + pick.length), `the cursor left the finished word, is at ${cur}`);
+        // One more letter must not overwrite the crossing
+        await page.keyboard.press('Q');
+        assert.equal(await rowText(page, pick.row, pick.col, pick.length), word, 'the crossing letter survived');
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
     test('clicking the selected cell toggles direction; arrows, prev/next and Tab behave', async () => {
         const page = await newPage();
         await go(page, base + 'index.html?set=geography&size=12&seed=77');
@@ -209,6 +235,8 @@ describe('desktop play', () => {
         await page.click('#stats-button');
         const stats = (await page.locator('#stats-list').innerText()).replace(/\s+/g, ' ');
         assert.match(stats, /Puzzles solved 1 Current streak 1 day/);
+        assert.match(stats, /12×12 best \d+:\d\d · average \d+:\d\d/, 'best and average are per size');
+        assert.ok(!stats.includes('Best time'), 'the global best is gone');
         await page.keyboard.press('Escape');
 
         await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
@@ -553,6 +581,8 @@ describe('creator and archive', () => {
         await page.click('#stats-button');
         const stats = (await page.locator('#stats-list').innerText()).replace(/\s+/g, ' ');
         assert.match(stats, /Current streak 0 days Mini streak 1 day/);
+        assert.match(stats, /7×7 Mini best \d+:\d\d/, 'the Mini has its own best');
+        assert.ok(!/12×12 best/.test(stats), 'no 12x12 row without a 12x12 solve');
         await page.keyboard.press('Escape');
         await page.click('#calendar-button');
         assert.match(await page.locator('#calendar-summary').innerText(), /Animals Mini: 1 solved/);
