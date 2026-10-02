@@ -57,7 +57,7 @@ Examples:
 - Enter, Space, or tapping the selected cell again switches between across and down
 - Backspace clears and steps back; Delete clears the cell without moving. Tab leaves the grid
 - **Check word** and **Check all** mark cells green or red without changing them
-- **Reveal letter** and **Reveal word** fill in answers, shown in blue
+- **Reveal letter** and **Reveal word** fill in answers, shown in blue. Each revealed letter adds 20 seconds to the clock, shown beside the timer and in your result; checking is free
 - **Pencil** (or the `.` key) enters tentative letters shown in grey. **Reset** clears every entry and restarts the timer, after asking
 - **Random puzzle** loads a new puzzle number. Pick a date to play a past daily puzzle, then **Go**, or open **Archive** for a calendar of the current word set with solved days filled in
 - **Difficulty**: easy shows wrong letters as you type, normal waits for you to check, hard hides check and reveal. In every mode a full grid that is not correct shows a note saying so, without saying where
