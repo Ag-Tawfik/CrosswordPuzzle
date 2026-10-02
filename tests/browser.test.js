@@ -236,6 +236,30 @@ describe('desktop play', () => {
         await page.context().close();
     });
 
+    test('a full but wrong grid says so, in hard mode too, and the nudge goes when a cell is cleared', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals&seed=5');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        await page.selectOption('#mode', 'hard');
+        const p = await puzzleData(page);
+        const first = p.across[0];
+        const whiteCells = await page.locator('td.white').count();
+        await page.click(cellSel(first.row, first.col));
+        // A press can land on an already filled cell, so keep going until the grid is full
+        for (let i = 0; i < whiteCells * 3 && await page.locator('#progress').innerText() !== '100%'; i++) await page.keyboard.press('Z');
+        assert.equal(await page.locator('#progress').innerText(), '100%');
+        assert.equal(await page.locator('#full-banner.show').count(), 1, 'nudge shows on a full wrong grid');
+        assert.equal(await page.locator('#win-banner.show').count(), 0, 'no win');
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        assert.equal(await page.locator('#full-banner.show').count(), 1, 'nudge survives a reload');
+        await page.click(cellSel(first.row, first.col));
+        await page.keyboard.press('Backspace');
+        assert.equal(await page.locator('#full-banner.show').count(), 0, 'nudge goes once a cell is empty');
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
     test('desktop menus drive the native selects', async () => {
         const page = await newPage();
         await go(page, base + 'index.html?set=animals&seed=5');

@@ -20,6 +20,7 @@ window.startGame = function (puzzle) {
     const timerEl = document.getElementById('timer');
     const progressEl = document.getElementById('progress');
     const bannerEl = document.getElementById('win-banner');
+    const fullBannerEl = document.getElementById('full-banner');
     const winTextEl = document.getElementById('win-text');
     const modeEl = document.getElementById('mode');
     const pencilButton = document.getElementById('pencil');
@@ -363,7 +364,15 @@ window.startGame = function (puzzle) {
         refreshClueDone();
         refreshProgress();
         checkSolved();
+        refreshFullBanner();
         saveState();
+    }
+
+    // A full grid that is not solved gets a nudge in every mode, hard included.
+    // It says nothing about where the error is, so hard mode keeps its point.
+    function refreshFullBanner() {
+        const full = !solved && allCells().every(cell => cell.value !== '');
+        fullBannerEl.classList.toggle('show', full);
     }
 
     // --- Checking and revealing -----------------------------------------------------
@@ -711,6 +720,7 @@ window.startGame = function (puzzle) {
     refreshProgress();
     refreshStreak();
     checkSolved();
+    refreshFullBanner();
     startTimer();
 
     const firstClue = clues[ACROSS][0] || clues[DOWN][0];
