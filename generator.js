@@ -83,15 +83,32 @@
         if (Object.keys(clues).length === 0) {
             throw new Error(`Word set has no words: ${key}`);
         }
+        // Optional harder clues, used by hard mode; a word without one keeps its normal clue
+        const hard = {};
+        if (data.hard !== undefined) {
+            if (!data.hard || typeof data.hard !== 'object' || Array.isArray(data.hard)) throw new Error(`Malformed hard clues in word set: ${key}`);
+            for (const [word, clue] of Object.entries(data.hard)) {
+                const normalised = normaliseWords([word]);
+                const options = (Array.isArray(clue) ? clue : [clue])
+                    .map(c => (typeof c === 'string' ? c.trim() : ''))
+                    .filter(c => c !== '');
+                if (normalised.length === 0 || !clues[normalised[0]] || options.length === 0) {
+                    throw new Error(`Malformed hard clue '${word}' in word set: ${key}`);
+                }
+                hard[normalised[0]] = options;
+            }
+        }
         const name = typeof data.name === 'string' && data.name.trim() !== '' ? data.name.trim().slice(0, 60) : key;
         return {
             key,
             name,
             clues,
+            hard,
             words() { return Object.keys(clues); },
-            // Which clue shows depends only on the seed and the word
-            clueFor(word, seed) {
-                const options = clues[word] || ['Definition for ' + word.toLowerCase()];
+            // Which clue shows depends only on the seed and the word. With
+            // hard set, the harder clue is preferred where the word has one.
+            clueFor(word, seed, useHard = false) {
+                const options = (useHard && hard[word]) || clues[word] || ['Definition for ' + word.toLowerCase()];
                 return options[hash(seed + ':' + word) % options.length];
             },
         };
@@ -100,14 +117,17 @@
     // Every set in one: a word that appears in more than one set keeps all its clues
     function mergeWordSets(sets, name, key) {
         const words = {};
+        const hard = {};
+        const add = (into, word, clue) => {
+            const options = Array.isArray(clue) ? clue : [clue];
+            const w = word.trim().toUpperCase();
+            into[w] = (into[w] || []).concat(options.filter(c => !(into[w] || []).includes(c)));
+        };
         for (const set of sets) {
-            for (const [word, clue] of Object.entries(set.words || {})) {
-                const options = Array.isArray(clue) ? clue : [clue];
-                const w = word.trim().toUpperCase();
-                words[w] = (words[w] || []).concat(options.filter(c => !(words[w] || []).includes(c)));
-            }
+            for (const [word, clue] of Object.entries(set.words || {})) add(words, word, clue);
+            for (const [word, clue] of Object.entries(set.hard || {})) add(hard, word, clue);
         }
-        return wordSetFromObject({ name, words }, key);
+        return wordSetFromObject({ name, words, hard }, key);
     }
 
     // A seeded sample of a big word list, so a pool of hundreds costs no more to
@@ -305,6 +325,7 @@
                 col: w.startColumn,
                 length: w.word.length,
                 clue: wordSet.clueFor(w.word, seed),
+                hardClue: wordSet.clueFor(w.word, seed, true),
             });
         }
         clues[ACROSS].sort((a, b) => a.number - b.number);

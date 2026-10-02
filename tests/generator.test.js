@@ -150,6 +150,37 @@ describe('word sets', () => {
         }
     });
 
+    test('hard clues are optional, validated, preferred by hard mode and carried into the puzzle', () => {
+        const set = C.wordSetFromObject({ name: 'T', words: { CAT: 'Pet', DOG: ['Pet', 'Hound'] }, hard: { CAT: 'Nine lives' } }, 't');
+        assert.equal(set.clueFor('CAT', 1, true), 'Nine lives');
+        assert.equal(set.clueFor('CAT', 1), 'Pet', 'normal mode keeps the normal clue');
+        assert.equal(set.clueFor('DOG', 1, true), set.clueFor('DOG', 1), 'a word without a hard clue falls back');
+        assert.equal(C.wordSetFromObject({ name: 'T', words: { CAT: 'Pet' } }, 't').clueFor('CAT', 1, true), 'Pet', 'hard block is optional');
+        assert.throws(() => C.wordSetFromObject({ name: 'T', words: { CAT: 'Pet' }, hard: { COW: 'Moo' } }, 't'), /Malformed hard clue/);
+        assert.throws(() => C.wordSetFromObject({ name: 'T', words: { CAT: 'Pet' }, hard: [] }, 't'), /Malformed hard clues/);
+        const [grid, result] = C.generateCrossword(8, 8, set.words(), 20, 3);
+        const p = C.puzzleToObject(grid, result, set, 3);
+        const cat = p.across.concat(p.down).find(cl => cl.clue === 'Pet' && cl.hardClue === 'Nine lives');
+        assert.ok(cat, 'the puzzle carries both clues');
+        const merged = C.mergeWordSets([{ words: { CAT: 'Pet' }, hard: { CAT: 'Nine lives' } }, { words: { DOG: 'Hound' } }], 'M', 'm');
+        assert.equal(merged.clueFor('CAT', 1, true), 'Nine lives', 'merging keeps hard clues');
+    });
+
+    test('every shipped word has a hard clue that is not its normal clue and does not name the answer', () => {
+        const index = JSON.parse(fs.readFileSync(path.join(WORDS_DIR, 'index.json'), 'utf8'));
+        for (const { key } of index) {
+            const data = JSON.parse(fs.readFileSync(path.join(WORDS_DIR, `${key}.json`), 'utf8'));
+            const set = C.wordSetFromObject(data, key);
+            for (const w of set.words()) {
+                assert.ok(set.hard[w], `${key}: ${w} has no hard clue`);
+                for (const clue of set.hard[w]) {
+                    assert.ok(!set.clues[w].includes(clue), `${key}: ${w} hard clue repeats a normal one`);
+                    assert.ok(!new RegExp(`\\b${w}\\b`, 'i').test(clue), `${key}: ${w} hard clue names the answer`);
+                }
+            }
+        }
+    });
+
     test('every shipped set loads, fits 12x12 and fills at least 12 words', () => {
         const index = JSON.parse(fs.readFileSync(path.join(WORDS_DIR, 'index.json'), 'utf8'));
         assert.ok(index.length >= 3, 'at least three word sets in the index');
