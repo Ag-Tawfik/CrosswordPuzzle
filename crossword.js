@@ -5,7 +5,11 @@ window.startGame = function (puzzle) {
     const ACROSS = 0;
     const DOWN = 1;
 
-    const storageKey = `crossword:${puzzle.set}:${puzzle.rows}:${puzzle.seed}`;
+    // The key carries a fingerprint of the answer grid, so progress saved against an
+    // earlier layout (the word sets grow over time) is ignored rather than restored
+    // into the wrong cells
+    const layout = Crossword.hash(puzzle.cells.map(row => row.map(c => c ? c.letter : '.').join('')).join('/')).toString(36);
+    const storageKey = `crossword:${puzzle.set}:${puzzle.rows}:${puzzle.seed}:${layout}`;
     const STATS_KEY = 'crossword:stats';
     const MODE_KEY = 'crossword:mode';
     const THEME_KEY = 'crossword:theme';

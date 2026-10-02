@@ -75,7 +75,11 @@
             seed = puzzleDate !== null ? Number(puzzleDate.replace(/-/g, '')) : Number(seedParam);
         }
 
-        const [grid, result] = Crossword.generateCrossword(size, size, wordSet.words(), 500, seed);
+        // The placer runs many times and keeps the best layout. Each run costs about
+        // as much as the set has words, so bigger sets get fewer runs: the work stays
+        // near that of a 36-word set at 500 runs, and the result changes little past 100
+        const attempts = Math.max(100, Math.min(500, Math.round(18000 / Math.max(1, wordSet.words().length))));
+        const [grid, result] = Crossword.generateCrossword(size, size, wordSet.words(), attempts, seed);
         const puzzle = Object.assign(Crossword.puzzleToObject(grid, result, wordSet, seed), {
             set: setKey,
             setName: wordSet.name,
