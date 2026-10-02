@@ -466,6 +466,7 @@ window.startGame = function (puzzle) {
         winVerdictEl.textContent = record ? verdict(record) : '';
         bannerEl.classList.add('show');
         if (countUpMs <= 0 || elapsed === 0) { winTextEl.textContent = textFor(elapsed); return; }
+        winTextEl.textContent = textFor(0); // never a blank banner while the first frame waits
         const started = performance.now();
         const tick = now => {
             const k = Math.min(1, (now - started) / countUpMs);
