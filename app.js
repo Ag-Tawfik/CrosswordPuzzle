@@ -9,6 +9,7 @@
 // ?mini=1            the Mini: a 7x7 of the same set, with its own streak. Overrides size.
 // ?set=mixed         every word set in one pool; each puzzle draws a seeded hand of words
 // ?beat=252          a challenge: a friend's time in seconds to beat on this exact puzzle
+// No parameters at all shows Today: one card per word set with its daily and Mini.
 
 (async function () {
     'use strict';
@@ -36,6 +37,65 @@
         return new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
     }
 
+    // Reads what the game saves, without the game: the theme and the solved days
+    function readJson(key) {
+        try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
+    }
+
+    function previousDay(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() - 1);
+        return d.toISOString().slice(0, 10);
+    }
+
+    function showToday(sets, today) {
+        const theme = (() => { try { return localStorage.getItem('crossword:theme'); } catch (e) { return null; } })();
+        if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+        document.body.classList.add('today-mode');
+        document.title = 'Crossword';
+        text('h1', 'Crossword');
+        subtitleEl.textContent = new Date(today + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+        const stats = readJson('crossword:stats') || {};
+        const solvedToday = (stats.days && stats.days[today]) || [];
+        const alive = last => last === today || last === previousDay(today);
+        const streak = alive(stats.lastDaily) ? stats.streak || 0 : 0;
+        const miniStreak = alive(stats.lastMini) ? stats.miniStreak || 0 : 0;
+        const streaksEl = document.getElementById('today-streaks');
+        if (streak || miniStreak) {
+            const parts = [];
+            if (streak) parts.push(`Streak <strong>${streak}</strong>`);
+            if (miniStreak) parts.push(`Mini streak <strong>${miniStreak}</strong>`);
+            streaksEl.innerHTML = parts.join(' · ');
+            streaksEl.hidden = false;
+        }
+
+        const TICK = '<span class="tick" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+        const grid = document.getElementById('today-grid');
+        grid.innerHTML = '';
+        for (const s of sets) {
+            const card = document.createElement('div');
+            card.className = 'today-card';
+            const h2 = document.createElement('h2');
+            h2.textContent = s.name;
+            card.appendChild(h2);
+            for (const [label, size, mini, name] of [['Daily puzzle', '12×12', false, s.name], ['Mini', '7×7', true, `${s.name} Mini`]]) {
+                const a = document.createElement('a');
+                const q = new URLSearchParams({ set: s.key });
+                if (mini) q.set('mini', '1');
+                a.href = `index.html?${q}`;
+                const solved = solvedToday.includes(name);
+                a.className = solved ? 'solved' : '';
+                a.innerHTML = `${TICK}<span>${label}</span><span class="size">${size}</span>`;
+                if (solved) a.setAttribute('aria-label', `${s.name} ${label}, solved`);
+                card.appendChild(a);
+            }
+            grid.appendChild(card);
+        }
+        document.getElementById('today-random').href = `index.html?set=mixed&seed=${Math.floor(Math.random() * 1e9)}`;
+        document.getElementById('today').hidden = false;
+    }
+
     try {
         const today = new Date().toISOString().slice(0, 10);
 
@@ -51,6 +111,14 @@
         const MIXED = { key: 'mixed', name: 'Mixed' };
         const MIXED_POOL = 150; // words drawn per puzzle from the mixed set
         const sets = index.concat([MIXED]);
+
+        // --- Today: the front door ----------------------------------------------------
+        if ([...params.keys()].length === 0) {
+            showToday(sets, today);
+            window.__puzzle = null; // for tests: loading is finished, there is no puzzle
+            return;
+        }
+
         let setKey = params.get('set') || 'animals';
         if (!sets.some(s => s.key === setKey)) setKey = index[0].key;
 

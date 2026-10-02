@@ -6,6 +6,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 
 ## Features
 
+- **Today**, the front door: one card per word set with its daily puzzle and Mini, ticked once solved
 - **Daily puzzle** per word set, plus unlimited random puzzles and an archive of past days
 - **Daily Mini**: a 7×7 of the same set with six or seven words, solvable in a minute, with its own streak and archive
 - **Shareable puzzles**: the same puzzle number always gives the same grid
@@ -46,6 +47,8 @@ The workflow in `.github/workflows/pages.yml` publishes the repository root to G
 | `custom` | A custom puzzle made on `create.html`. Overrides `set` | |
 | `mini` | `1` for the Mini, a 7×7 of the set. Overrides `size` | |
 | `beat` | A challenge: a time in seconds to beat on this exact puzzle. Made by the **Challenge a friend** button | |
+
+With no parameters at all, `index.html` shows Today: a card per word set with its daily puzzle and Mini.
 
 Examples:
 
