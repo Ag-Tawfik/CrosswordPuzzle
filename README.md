@@ -82,7 +82,7 @@ Each word set is a JSON file in `words/`, listed in `words/index.json`:
 }
 ```
 
-A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; 30 or more words is a good size. Add the new file to `words/index.json` and it appears in the word set menu.
+A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; the shipped sets hold 90 to 135 words, and a 12×12 grid uses 15 to 20 of them. Bigger sets give more varied puzzles but take longer to generate, so the generator makes fewer attempts for them. Add the new file to `words/index.json` and it appears in the word set menu.
 
 ## How It Works
 

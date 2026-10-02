@@ -101,6 +101,78 @@
       "Honey maker",
       "Buzzing pollinator"
     ],
-    "ANT": "Six-legged colony builder"
+    "ANT": "Six-legged colony builder",
+    "ELEPHANT": [
+      "Largest land animal",
+      "Giant with a trunk and tusks"
+    ],
+    "RHINO": "Horned heavyweight of Africa",
+    "HIPPO": "River giant with a huge yawn",
+    "GORILLA": "Largest of the apes",
+    "CHIMP": "Our closest animal relative, for short",
+    "LEOPARD": "Spotted cat that drags its dinner up a tree",
+    "CHEETAH": [
+      "Fastest land animal",
+      "Spotted sprinter of the savanna"
+    ],
+    "JAGUAR": "Spotted big cat of the Amazon",
+    "HYENA": "Laughing scavenger",
+    "MEERKAT": "Desert mongoose that stands sentry",
+    "KANGAROO": [
+      "Hopping marsupial with a pouch",
+      "Australian animal that boxes"
+    ],
+    "WOMBAT": "Burrowing Australian with cube-shaped droppings",
+    "PLATYPUS": "Egg-laying mammal with a duck bill",
+    "SLOTH": "Slowest mammal, hanging about in trees",
+    "LLAMA": "Andean pack animal that spits",
+    "BISON": "Shaggy North American grazer",
+    "MOOSE": "Largest deer, with broad antlers",
+    "BEAVER": [
+      "Dam-building rodent",
+      "Flat-tailed tree gnawer"
+    ],
+    "SQUIRREL": "Bushy-tailed nut hoarder",
+    "HEDGEHOG": "Prickly ball that snuffles at night",
+    "BADGER": "Striped-faced burrower",
+    "RACCOON": "Masked raider of the bins",
+    "SKUNK": "Striped animal with a terrible smell",
+    "BAT": "Only mammal that truly flies",
+    "DOLPHIN": [
+      "Clever, clicking sea mammal",
+      "Flipper, for one"
+    ],
+    "SEAL": "Whiskered swimmer that barks on the rocks",
+    "WALRUS": "Tusked Arctic heavyweight",
+    "OCTOPUS": "Eight-armed sea creature with three hearts",
+    "CRAB": "Sideways-walking shellfish",
+    "LOBSTER": "Clawed shellfish that turns red when cooked",
+    "JELLYFISH": "Stinging drifter of the sea",
+    "SALMON": "Fish that swims upstream to spawn",
+    "TROUT": "Freshwater fish prized by anglers",
+    "EEL": "Snake-like fish",
+    "PARROT": [
+      "Bird that repeats what you say",
+      "Colourful talker"
+    ],
+    "FLAMINGO": "Pink bird that stands on one leg",
+    "OSTRICH": "Largest bird, and a fast runner",
+    "PEACOCK": "Bird with a fan of eye-spotted feathers",
+    "SWAN": "Graceful white bird of the lake",
+    "CROW": "Black bird known for its cleverness",
+    "ROBIN": "Red-breasted garden bird",
+    "PIGEON": "City bird once used to carry messages",
+    "GECKO": "Lizard that walks up walls",
+    "IGUANA": "Large lizard with a spiny back",
+    "CROCODILE": "Toothy river reptile with a long snout",
+    "LIZARD": "Scaly sunbather that may drop its tail",
+    "TOAD": "Warty cousin of the frog",
+    "SPIDER": "Eight-legged web spinner",
+    "BUTTERFLY": "Caterpillar, grown up",
+    "MOTH": "Night flyer drawn to a flame",
+    "BEETLE": "Insect with hard wing cases",
+    "WASP": "Stinging insect with a narrow waist",
+    "SNAIL": "Slow mover with a shell on its back",
+    "WORM": "Wriggler that the early bird catches"
   }
 }
