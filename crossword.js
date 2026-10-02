@@ -10,6 +10,8 @@ window.startGame = function (puzzle) {
     // into the wrong cells
     const layout = Crossword.hash(puzzle.cells.map(row => row.map(c => c ? c.letter : '.').join('')).join('/')).toString(36);
     const storageKey = `crossword:${puzzle.set}:${puzzle.rows}:${puzzle.seed}:${layout}`;
+    // The Mini keeps its own history, archive and streak, apart from the full puzzle
+    const archiveName = puzzle.mini ? `${puzzle.setName} Mini` : puzzle.setName;
     const STATS_KEY = 'crossword:stats';
     const MODE_KEY = 'crossword:mode';
     const THEME_KEY = 'crossword:theme';
@@ -429,6 +431,8 @@ window.startGame = function (puzzle) {
             best: s.best || null,
             streak: s.streak || 0,
             lastDaily: s.lastDaily || null,
+            miniStreak: s.miniStreak || 0,
+            lastMini: s.lastMini || null,
             history: Array.isArray(s.history) ? s.history : [],
             days: daysFromStats(s),
         };
@@ -460,46 +464,52 @@ window.startGame = function (puzzle) {
 
         const today = todayUtc();
         if (puzzle.daily && puzzle.date === today) {
-            if (stats.lastDaily === previousDay(today)) stats.streak += 1;
-            else if (stats.lastDaily !== today) stats.streak = 1;
-            stats.lastDaily = today;
+            const streakKey = puzzle.mini ? 'miniStreak' : 'streak';
+            const lastKey = puzzle.mini ? 'lastMini' : 'lastDaily';
+            if (stats[lastKey] === previousDay(today)) stats[streakKey] += 1;
+            else if (stats[lastKey] !== today) stats[streakKey] = 1;
+            stats[lastKey] = today;
         }
 
         const isBest = stats.best === null || elapsed < stats.best;
         stats.solved += 1;
         stats.totalTime += elapsed;
         if (isBest) stats.best = elapsed;
-        stats.history.unshift({ id, when: today, set: puzzle.setName, seed: puzzle.seed, size: puzzle.rows, time: elapsed, reveals });
+        stats.history.unshift({ id, when: today, set: archiveName, seed: puzzle.seed, size: puzzle.rows, time: elapsed, reveals });
         stats.history = stats.history.slice(0, 50);
         if (puzzle.date) {
             const list = stats.days[puzzle.date] || [];
-            if (!list.includes(puzzle.setName)) list.push(puzzle.setName);
+            if (!list.includes(archiveName)) list.push(archiveName);
             stats.days[puzzle.date] = list;
         }
         writeJson(STATS_KEY, stats);
         refreshStreak();
-        return { streak: stats.streak, isBest };
+        return { streak: puzzle.mini ? stats.miniStreak : stats.streak, isBest };
     }
 
-    function currentStreak(stats) {
-        // A streak survives until the end of the day after the last daily solve
+    // A streak survives until the end of the day after the last daily solve
+    function currentStreak(stats, mini = puzzle.mini) {
         const today = todayUtc();
-        if (stats.lastDaily === today || stats.lastDaily === previousDay(today)) return stats.streak;
+        const last = mini ? stats.lastMini : stats.lastDaily;
+        if (last === today || last === previousDay(today)) return mini ? stats.miniStreak : stats.streak;
         return 0;
     }
 
     function refreshStreak() {
         const streak = currentStreak(loadStats());
         document.getElementById('streak').textContent = streak;
+        document.getElementById('streak-label').textContent = puzzle.mini ? 'Mini streak' : 'Streak';
         document.getElementById('streak-status').hidden = streak === 0;
     }
 
     function showStats() {
         const stats = loadStats();
         const list = document.getElementById('stats-list');
+        const dayWord = n => n + (n === 1 ? ' day' : ' days');
         const rows = [
             ['Puzzles solved', stats.solved],
-            ['Current streak', currentStreak(stats) + (currentStreak(stats) === 1 ? ' day' : ' days')],
+            ['Current streak', dayWord(currentStreak(stats, false))],
+            ['Mini streak', dayWord(currentStreak(stats, true))],
             ['Best time', stats.best === null ? '–' : formatTime(stats.best)],
             ['Average time', stats.solved ? formatTime(Math.round(stats.totalTime / stats.solved)) : '–'],
         ];
@@ -563,24 +573,24 @@ window.startGame = function (puzzle) {
         for (let day = 1; day <= daysInMonth; day++) {
             const date = dateString(year, month, day);
             const sets = days[date] || [];
-            const solved = sets.includes(puzzle.setName);
+            const solved = sets.includes(archiveName);
             if (solved) solvedCount++;
             const classes = ['day'];
             if (solved) classes.push('solved');
-            if (sets.some(name => name !== puzzle.setName)) classes.push('other');
+            if (sets.some(name => name !== archiveName)) classes.push('other');
             if (date === today) classes.push('today');
             if (date === puzzle.date) classes.push('current');
             if (date > today) {
                 classes.push('future');
                 parts.push(`<span class="${classes.join(' ')}">${day}</span>`);
             } else {
-                const params = new URLSearchParams({ set: puzzle.set, size: String(puzzle.rows), date });
+                const params = new URLSearchParams(puzzle.mini ? { set: puzzle.set, mini: '1', date } : { set: puzzle.set, size: String(puzzle.rows), date });
                 const label = `${solved ? 'Solved, ' : ''}${new Date(date + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}`;
                 parts.push(`<a class="${classes.join(' ')}" href="index.html?${params}" aria-label="${escapeHtml(label)}">${day}</a>`);
             }
         }
         calendarGrid.innerHTML = parts.join('');
-        calendarSummary.textContent = `${puzzle.setName}: ${solvedCount} solved this month`;
+        calendarSummary.textContent = `${archiveName}: ${solvedCount} solved this month`;
     }
 
     calendarPrev.addEventListener('click', () => { calendarMonth = shiftMonth(calendarMonth, -1); renderCalendar(); });
@@ -600,7 +610,7 @@ window.startGame = function (puzzle) {
 
     document.getElementById('share-button').addEventListener('click', async () => {
         const label = puzzle.date ? `for ${puzzle.date}` : `#${puzzle.seed}`;
-        let text = `${puzzle.setName} Crossword ${label} (${puzzle.rows}×${puzzle.rows})\nSolved in ${formatTime(elapsed)}`;
+        let text = `${puzzle.title} ${label} (${puzzle.rows}×${puzzle.rows})\nSolved in ${formatTime(elapsed)}`;
         if (reveals > 0) text += ` with ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
         text += `\n${window.location.href}`;
         const button = document.getElementById('share-button');

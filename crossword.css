@@ -518,6 +518,9 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 /* ------------------------------------------------------------------
    Grid
    ------------------------------------------------------------------ */
+/* The Mini is seven cells wide, so each cell can be bigger */
+body.mini { --cell: min(58px, calc((100vw - 2 * var(--gutter)) / 7)); }
+
 .grid-wrap {
     width: fit-content;
     max-width: 100%;
