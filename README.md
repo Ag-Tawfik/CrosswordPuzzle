@@ -8,7 +8,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 - **Daily Mini**: a 7×7 of the same set with six or seven words, solvable in a minute, with its own streak and archive
 - **Shareable puzzles**: the same puzzle number always gives the same grid
 - **Make your own**: paste words and clues on the create page and get a link that holds the whole puzzle
-- **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary
+- **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary, plus a **Mixed** set that draws from all of them so the topic gives nothing away
 - **A solve moment**: the grid sweeps green, the time counts up, and a verdict compares you with your earlier solves of the same size
 - **Stats and streaks** kept in the browser, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
 - **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal
@@ -36,7 +36,7 @@ The workflow in `.github/workflows/pages.yml` publishes the repository root to G
 
 | Parameter | Meaning | Default |
 |---|---|---|
-| `set` | Word set, the file name in `words/` without `.json` | `animals` |
+| `set` | Word set, the file name in `words/` without `.json`, or `mixed` for every set in one pool | `animals` |
 | `size` | Grid size, 8 to 20 | `12` |
 | `seed` | Puzzle number. The same number always gives the same puzzle | Today's date (UTC) |
 | `date` | A past day's daily puzzle, as `YYYY-MM-DD`. Overrides `seed` | |
@@ -86,7 +86,7 @@ Each word set is a JSON file in `words/`, listed in `words/index.json`:
 }
 ```
 
-A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; the shipped sets hold 90 to 135 words, and a 12×12 grid uses 15 to 20 of them. Bigger sets give more varied puzzles but take longer to generate, so the generator makes fewer attempts for them. Add the new file to `words/index.json` and it appears in the word set menu.
+A word may have one clue or a list of clues. Which clue appears depends on the puzzle number, so the same word gets different clues on different days. Words may contain letters only and must be no longer than the smallest grid you want to support. A set should hold well over the number of words a grid can fit, since the generator picks as many as fit; the shipped sets hold 90 to 135 words, and a 12×12 grid uses 15 to 20 of them. Bigger sets give more varied puzzles but take longer to generate, so the generator makes fewer attempts for them. Add the new file to `words/index.json` and it appears in the word set menu, and in the Mixed set, which is every listed set merged. The Mixed set is far bigger than a grid can use, so each puzzle draws a hand of 150 words chosen by the puzzle number.
 
 ## How It Works
 

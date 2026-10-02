@@ -7,6 +7,7 @@
 //                    With neither, today's daily puzzle.
 // ?custom=<base64>   a custom word list made on create.html; overrides set
 // ?mini=1            the Mini: a 7x7 of the same set, with its own streak. Overrides size.
+// ?set=mixed         every word set in one pool; each puzzle draws a seeded hand of words
 
 (async function () {
     'use strict';
@@ -46,8 +47,11 @@
         const index = await loadJson('words/index.json');
         if (!Array.isArray(index) || index.length === 0) throw new Error('No word sets found');
 
+        const MIXED = { key: 'mixed', name: 'Mixed' };
+        const MIXED_POOL = 150; // words drawn per puzzle from the mixed set
+        const sets = index.concat([MIXED]);
         let setKey = params.get('set') || 'animals';
-        if (!index.some(s => s.key === setKey)) setKey = index[0].key;
+        if (!sets.some(s => s.key === setKey)) setKey = index[0].key;
 
         const customParam = params.get('custom') || '';
         const customSet = customParam ? Crossword.customWordSetFromParam(customParam) : null;
@@ -73,16 +77,23 @@
             // A custom puzzle keeps a fixed layout unless a seed is given explicitly
             seed = hasSeed ? Number(seedParam) : Crossword.hash(customParam) % 1000000000;
             puzzleDate = null;
+        } else if (setKey === MIXED.key) {
+            const files = await Promise.all(index.map(s => loadJson(`words/${s.key}.json`)));
+            wordSet = Crossword.mergeWordSets(files, MIXED.name, MIXED.key);
+            seed = puzzleDate !== null ? Number(puzzleDate.replace(/-/g, '')) : Number(seedParam);
         } else {
             wordSet = Crossword.wordSetFromObject(await loadJson(`words/${setKey}.json`), setKey);
             seed = puzzleDate !== null ? Number(puzzleDate.replace(/-/g, '')) : Number(seedParam);
         }
 
+        // The mixed set is too big to place whole; each seed draws its own hand of words
+        const pool = setKey === MIXED.key ? Crossword.samplePool(wordSet.words(), MIXED_POOL, seed) : wordSet.words();
+
         // The placer runs many times and keeps the best layout. Each run costs about
-        // as much as the set has words, so bigger sets get fewer runs: the work stays
+        // as much as the pool has words, so bigger pools get fewer runs: the work stays
         // near that of a 36-word set at 500 runs, and the result changes little past 100
-        const attempts = Math.max(100, Math.min(500, Math.round(18000 / Math.max(1, wordSet.words().length))));
-        const [grid, result] = Crossword.generateCrossword(size, size, wordSet.words(), attempts, seed);
+        const attempts = Math.max(100, Math.min(500, Math.round(18000 / Math.max(1, pool.length))));
+        const [grid, result] = Crossword.generateCrossword(size, size, pool, attempts, seed);
         const puzzle = Object.assign(Crossword.puzzleToObject(grid, result, wordSet, seed), {
             set: setKey,
             setName: wordSet.name,
@@ -117,7 +128,7 @@
 
         const setSelect = document.querySelector('select[name=set]');
         setSelect.innerHTML = '';
-        for (const s of index) {
+        for (const s of sets) {
             const opt = document.createElement('option');
             opt.value = s.key;
             opt.textContent = s.name;
