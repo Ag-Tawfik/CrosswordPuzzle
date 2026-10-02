@@ -530,7 +530,8 @@ describe('creator and archive', () => {
         assert.ok(await page.locator('#today').isVisible());
         assert.ok(await page.locator('#toolbar').isHidden(), 'the puzzle chrome is hidden');
         assert.equal(await page.locator('h1').innerText(), 'Crossword');
-        assert.match(await page.locator('.subtitle').innerText(), /^[A-Z][a-z]+day \d{1,2} [A-Z][a-z]+ \d{4}$/);
+        // The weekday comma depends on the browser's ICU version
+        assert.match(await page.locator('.subtitle').innerText(), /^[A-Z][a-z]+day,? \d{1,2} [A-Z][a-z]+ \d{4}$/);
         const setCount = (await page.request.get(base + 'words/index.json')).ok() ? (await (await page.request.get(base + 'words/index.json')).json()).length + 1 : 0;
         assert.equal(await page.locator('.today-card').count(), setCount, 'one card per set, Mixed included');
         assert.equal(await page.locator('.today-card a').count(), setCount * 2);
