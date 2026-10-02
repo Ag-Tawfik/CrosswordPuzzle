@@ -154,8 +154,16 @@ describe('desktop play', () => {
         assert.ok(secondsLater < secondsBefore + first.length * 20 + 5, 'revealing a correct letter costs nothing');
         await solve(page);
 
+        // The solve: the grid sweeps green, the time counts up to the real one, and a verdict follows
+        assert.equal(await page.locator('#crossword-grid.solved').count(), 1, 'the sweep runs');
+        assert.ok(await page.evaluate(() => document.querySelector('td.white').style.getPropertyValue('--d') !== ''), 'cells carry their delay');
+        const finalTime = await page.evaluate(() => document.getElementById('timer').innerText);
+        await page.waitForFunction(t => document.getElementById('win-text').innerText.startsWith(`Solved in ${t}`), finalTime);
         const win = await page.locator('#win-text').innerText();
         assert.match(win, new RegExp(`^Solved in \\d+:\\d\\d, including ${first.length < 3 ? '0:' : ''}\\d:\\d\\d for ${first.length} revealed letters`));
+        assert.equal(await page.locator('#win-verdict').innerText(), 'Your first 12×12. Now there is a time to beat.');
+        await page.waitForFunction(() => !document.getElementById('crossword-grid').classList.contains('solved'));
+        assert.ok(await page.evaluate(() => document.querySelector('td.white').style.getPropertyValue('--d') === ''), 'delays are cleared after the sweep');
         assert.equal(await page.locator('#streak').innerText(), '1');
         assert.equal(await page.locator('#progress').innerText(), '100%');
 
@@ -179,6 +187,8 @@ describe('desktop play', () => {
 
         await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
         assert.equal(await page.locator('#win-banner.show').count(), 1, 'solved state persists');
+        assert.equal(await page.locator('#win-verdict').innerText(), '', 'no verdict on a reload');
+        assert.equal(await page.locator('#crossword-grid.solved').count(), 0, 'no sweep on a reload');
         await page.click('#stats-button');
         assert.match((await page.locator('#stats-list').innerText()).replace(/\s+/g, ' '), /Puzzles solved 1 /, 'not double counted');
         assert.deepEqual(page.errors, []);
@@ -474,8 +484,14 @@ describe('creator and archive', () => {
         await go(page, base + 'index.html?set=animals&mini=1');
         await solve(page);
         assert.match(await page.locator('#win-text').innerText(), /^Solved in/);
+        assert.equal(await page.locator('#win-verdict').innerText(), 'Your first Mini. Now there is a time to beat.');
         assert.equal(await page.locator('#streak').innerText(), '1');
         assert.equal(await page.locator('#streak-label').innerText(), 'Mini streak');
+
+        // A second Mini is judged against the first, never against the full puzzles
+        await go(page, base + 'index.html?set=animals&mini=1&seed=77');
+        await solve(page);
+        assert.match(await page.locator('#win-verdict').innerText(), /^(Your fastest Mini yet|Faster than your Mini average|Exactly your Mini average|Slower than your Mini average)/);
         await page.click('#stats-button');
         const stats = (await page.locator('#stats-list').innerText()).replace(/\s+/g, ' ');
         assert.match(stats, /Current streak 0 days Mini streak 1 day/);

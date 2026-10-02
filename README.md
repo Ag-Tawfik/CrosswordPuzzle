@@ -9,6 +9,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 - **Shareable puzzles**: the same puzzle number always gives the same grid
 - **Make your own**: paste words and clues on the create page and get a link that holds the whole puzzle
 - **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary
+- **A solve moment**: the grid sweeps green, the time counts up, and a verdict compares you with your earlier solves of the same size
 - **Stats and streaks** kept in the browser, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
 - **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal
 - **Pencil mode** for tentative letters, **dark mode**, and **print** for a blank grid or the answer key

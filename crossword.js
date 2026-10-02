@@ -24,6 +24,7 @@ window.startGame = function (puzzle) {
     const bannerEl = document.getElementById('win-banner');
     const fullBannerEl = document.getElementById('full-banner');
     const winTextEl = document.getElementById('win-text');
+    const winVerdictEl = document.getElementById('win-verdict');
     const modeEl = document.getElementById('mode');
     const pencilButton = document.getElementById('pencil');
     const clueLists = { [ACROSS]: document.getElementById('across-clues'), [DOWN]: document.getElementById('down-clues') };
@@ -403,10 +404,37 @@ window.startGame = function (puzzle) {
         if (solved || !all.every(cell => cell.value === cell.letter)) return;
         solved = true;
         stopTimer();
+        const wave = startCelebration(all);
         all.forEach(cell => cell.td.classList.add('correct'));
         const record = recordSolve();
-        showWin(record);
+        showWin(record, wave);
         saveState();
+    }
+
+    // Green sweeps from the top left and each letter pops in turn. Returns how
+    // long the sweep takes, so the banner's count-up can keep pace with it.
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let celebrationTimer = null;
+
+    function startCelebration(all) {
+        if (reducedMotion) return 0;
+        const step = puzzle.rows <= 8 ? 70 : 40;
+        let longest = 0;
+        all.forEach(cell => {
+            const delay = (cell.r + cell.c) * step;
+            cell.td.style.setProperty('--d', `${delay}ms`);
+            longest = Math.max(longest, delay);
+        });
+        gridEl.classList.add('solved');
+        clearTimeout(celebrationTimer);
+        celebrationTimer = setTimeout(endCelebration, longest + 800);
+        return longest + 350;
+    }
+
+    function endCelebration() {
+        clearTimeout(celebrationTimer);
+        gridEl.classList.remove('solved');
+        allCells().forEach(cell => cell.td.style.removeProperty('--d'));
     }
 
     // Shows what the reveals just made cost, and the new time at once
@@ -426,12 +454,36 @@ window.startGame = function (puzzle) {
         return `, including ${formatTime(reveals * REVEAL_PENALTY)} for ${reveals} revealed letter${reveals === 1 ? '' : 's'}`;
     }
 
-    function showWin(record) {
-        let text = `Solved in ${formatTime(elapsed)}${revealsNote()}`;
-        if (record && record.streak > 1) text += `. Streak: ${record.streak} days`;
-        if (record && record.isBest) text += '. New best time';
-        winTextEl.textContent = text + '.';
+    // The banner: the time counts up with the sweep on a fresh solve, then a
+    // one-line verdict against earlier solves of the same size
+    function showWin(record, countUpMs = 0) {
+        const textFor = t => {
+            let text = `Solved in ${formatTime(t)}${revealsNote()}`;
+            if (record && record.streak > 1) text += `. Streak: ${record.streak} days`;
+            if (record && record.isBest) text += '. New best time';
+            return text + '.';
+        };
+        winVerdictEl.textContent = record ? verdict(record) : '';
         bannerEl.classList.add('show');
+        if (countUpMs <= 0 || elapsed === 0) { winTextEl.textContent = textFor(elapsed); return; }
+        winTextEl.textContent = textFor(0); // never a blank banner while the first frame waits
+        const started = performance.now();
+        const tick = now => {
+            const k = Math.min(1, (now - started) / countUpMs);
+            const eased = 1 - Math.pow(1 - k, 3);
+            winTextEl.textContent = textFor(Math.round(elapsed * eased));
+            if (k < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    function verdict(record) {
+        const size = puzzle.mini ? 'Mini' : `${puzzle.rows}×${puzzle.rows}`;
+        if (record.previous === 0) return `Your first ${size}. Now there is a time to beat.`;
+        if (elapsed < record.bestSimilar) return `Your fastest ${size} yet, ${formatTime(record.bestSimilar - elapsed)} under your previous best.`;
+        if (elapsed < record.average) return `Faster than your ${size} average of ${formatTime(record.average)}.`;
+        if (elapsed === record.average) return `Exactly your ${size} average of ${formatTime(record.average)}.`;
+        return `Slower than your ${size} average of ${formatTime(record.average)}.`;
     }
 
     // --- Stats and streaks ------------------------------------------------------------
@@ -495,6 +547,10 @@ window.startGame = function (puzzle) {
         }
 
         const isBest = stats.best === null || elapsed < stats.best;
+        // Earlier solves of the same size, for the verdict: a Mini is not compared with a 15x15
+        const similar = stats.history.filter(h => h.size === puzzle.rows);
+        const average = similar.length ? Math.round(similar.reduce((sum, h) => sum + h.time, 0) / similar.length) : null;
+        const bestSimilar = similar.length ? Math.min(...similar.map(h => h.time)) : null;
         stats.solved += 1;
         stats.totalTime += elapsed;
         if (isBest) stats.best = elapsed;
@@ -507,7 +563,7 @@ window.startGame = function (puzzle) {
         }
         writeJson(STATS_KEY, stats);
         refreshStreak();
-        return { streak: puzzle.mini ? stats.miniStreak : stats.streak, isBest };
+        return { streak: puzzle.mini ? stats.miniStreak : stats.streak, isBest, previous: similar.length, average, bestSimilar };
     }
 
     // A streak survives until the end of the day after the last daily solve
@@ -777,6 +833,7 @@ window.startGame = function (puzzle) {
     });
 
     function resetPuzzle() {
+        endCelebration();
         allCells().forEach(cell => {
             setValue(cell, '');
             cell.td.classList.remove('revealed', 'correct');
