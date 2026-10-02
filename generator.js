@@ -97,6 +97,28 @@
         };
     }
 
+    // Every set in one: a word that appears in more than one set keeps all its clues
+    function mergeWordSets(sets, name, key) {
+        const words = {};
+        for (const set of sets) {
+            for (const [word, clue] of Object.entries(set.words || {})) {
+                const options = Array.isArray(clue) ? clue : [clue];
+                const w = word.trim().toUpperCase();
+                words[w] = (words[w] || []).concat(options.filter(c => !(words[w] || []).includes(c)));
+            }
+        }
+        return wordSetFromObject({ name, words }, key);
+    }
+
+    // A seeded sample of a big word list, so a pool of hundreds costs no more to
+    // place than a set, and each seed draws a different hand of words
+    function samplePool(words, count, seed) {
+        if (words.length <= count) return words.slice();
+        const copy = words.slice();
+        shuffle(copy, makeRandom(seed * 2654435761 % 4294967296 + 1));
+        return copy.slice(0, count);
+    }
+
     function base64urlDecode(encoded) {
         const b64 = encoded.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((encoded.length + 3) % 4);
         const bin = typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
@@ -300,7 +322,7 @@
     return {
         ACROSS, DOWN,
         makeRandom, hash,
-        normaliseWords, wordSetFromObject, customWordSetFromParam, base64urlEncode, base64urlDecode,
+        normaliseWords, wordSetFromObject, mergeWordSets, samplePool, customWordSetFromParam, base64urlEncode, base64urlDecode,
         generatePuzzleGrid, letterAt, canPlaceWord, writeWord, findCrossingPositions, numberGrid,
         placeWordsInGrid, generateCrossword, puzzleToObject,
     };

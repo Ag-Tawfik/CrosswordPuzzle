@@ -452,6 +452,23 @@ describe('creator and archive', () => {
         await page.context().close();
     });
 
+    test('the mixed set draws from every topic and works as a Mini', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=mixed&seed=11');
+        assert.equal(await page.locator('h1').innerText(), 'Mixed Crossword');
+        assert.equal(await page.inputValue('select[name=set]'), 'mixed');
+        assert.equal(await page.locator('select[name=set] option').last().innerText(), 'Mixed', 'listed after the topic sets');
+        const p = await puzzleData(page);
+        assert.ok(p.wordCount >= 12, `placed ${p.wordCount}`);
+        // The Mini link and the archive keep the set
+        assert.ok((await page.locator('#mini-link').getAttribute('href')).includes('set=mixed'));
+        await go(page, base + 'index.html?set=mixed&mini=1');
+        assert.equal(await page.locator('h1').innerText(), 'Mixed Mini');
+        assert.equal((await puzzleData(page)).rows, 7);
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
     test('the daily Mini is a 7x7 of the same set with its own streak and archive', async () => {
         const page = await newPage();
         await go(page, base + 'index.html?set=animals');

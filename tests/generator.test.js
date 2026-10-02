@@ -126,6 +126,30 @@ describe('word sets', () => {
         assert.deepEqual(C.normaliseWords(['cat', ' Dog ', 'CAT', 'a-b', '', '12']), ['CAT', 'DOG']);
     });
 
+    test('the mixed set merges every shipped set, keeps both clues of a shared word, and draws a seeded pool', () => {
+        const index = JSON.parse(fs.readFileSync(path.join(WORDS_DIR, 'index.json'), 'utf8'));
+        const files = index.map(s => JSON.parse(fs.readFileSync(path.join(WORDS_DIR, `${s.key}.json`), 'utf8')));
+        const mixed = C.mergeWordSets(files, 'Mixed', 'mixed');
+        const total = new Set(files.flatMap(f => Object.keys(f.words).map(w => w.toUpperCase()))).size;
+        assert.equal(mixed.words().length, total, 'every word once');
+        assert.ok(mixed.words().length > 600);
+        assert.ok(mixed.clues.BAT.length >= 2, 'BAT keeps its animal and its sports clue');
+
+        const a = C.samplePool(mixed.words(), 150, 20261002);
+        const b = C.samplePool(mixed.words(), 150, 20261002);
+        const c = C.samplePool(mixed.words(), 150, 20261003);
+        assert.equal(a.length, 150);
+        assert.deepEqual(a, b, 'the same seed draws the same hand');
+        assert.notDeepEqual(a, c, 'another seed draws another hand');
+        assert.ok(c.filter(w => !a.includes(w)).length > 50, 'the hands differ substantially');
+        assert.deepEqual(C.samplePool(['A', 'B'], 5, 1), ['A', 'B'], 'a small list is returned whole');
+
+        for (const seed of [20261001, 20261002, 20261003]) {
+            const [, result] = C.generateCrossword(12, 12, C.samplePool(mixed.words(), 150, seed), 100, seed);
+            assert.ok(result.placed.length >= 12, `mixed seed ${seed} placed only ${result.placed.length}`);
+        }
+    });
+
     test('every shipped set loads, fits 12x12 and fills at least 12 words', () => {
         const index = JSON.parse(fs.readFileSync(path.join(WORDS_DIR, 'index.json'), 'utf8'));
         assert.ok(index.length >= 3, 'at least three word sets in the index');
