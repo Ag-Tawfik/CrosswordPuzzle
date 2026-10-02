@@ -62,6 +62,8 @@
     --warn-bg: rgba(255, 149, 0, 0.14);
     --warn-fg: #8a5300;
 
+    --menu-bg: rgba(255, 255, 255, 0.94);
+
     /* Up-and-down chevron for pickers, coloured like --muted */
     --picker-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5' fill='none' stroke='%236e6e73' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
 }
@@ -118,6 +120,7 @@
         --success-fg: #7ee29a;
         --warn-bg: rgba(255, 159, 10, 0.18);
         --warn-fg: #ffc96b;
+        --menu-bg: rgba(44, 44, 46, 0.94);
         --picker-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5' fill='none' stroke='%2398989d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     }
 }
@@ -167,6 +170,7 @@
     --success-fg: #7ee29a;
     --warn-bg: rgba(255, 159, 10, 0.18);
     --warn-fg: #ffc96b;
+    --menu-bg: rgba(44, 44, 46, 0.94);
     --picker-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3.5 4.5 6 2l2.5 2.5M3.5 7.5 6 10l2.5-2.5' fill='none' stroke='%2398989d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
 }
 
@@ -307,6 +311,75 @@ select option, select optgroup {
 
 input[type="date"] { font-variant-numeric: tabular-nums; }
 input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.6; cursor: pointer; }
+
+/* Desktop menus (menu.js). The native select stays as the form field; on a
+   desktop it is hidden under a button and a listbox styled like the page.
+   Without .enhanced (phones) only the native select shows. */
+.menu { position: relative; display: inline-flex; vertical-align: middle; max-width: 100%; }
+.menu select { width: 100%; }
+.menu-button, .menu-list { display: none; }
+.menu.enhanced select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; pointer-events: none; }
+.menu.enhanced .menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    max-width: 280px;
+    padding-right: 10px;
+    text-align: left;
+}
+.menu-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-button svg { flex: 0 0 12px; width: 12px; height: 12px; color: var(--muted); }
+.menu-button[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
+.menu-button[aria-expanded="true"] svg { color: var(--accent); }
+.menu.enhanced .menu-list:not([hidden]) { display: flex; }
+.menu-list {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 6px);
+    left: 0;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    min-width: 100%;
+    width: max-content;
+    max-width: 320px;
+    max-height: 60vh;
+    overflow: auto;
+    flex-direction: column;
+    background: var(--menu-bg);
+    border-radius: 13px;
+    box-shadow: 0 0 0 var(--hairline) var(--separator-strong), 0 12px 40px -8px rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+}
+.menu-list li {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 42px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--fg);
+    white-space: nowrap;
+    cursor: default;
+}
+.menu-list li + li::before {
+    content: "";
+    position: absolute;
+    left: 36px;
+    right: 10px;
+    top: 0;
+    border-top: var(--hairline) solid var(--separator);
+}
+.menu-list li.active { background: var(--fill); }
+.menu-list li.active::before, .menu-list li.active + li::before { border-color: transparent; }
+.menu-list li svg { flex: 0 0 16px; width: 16px; height: 16px; visibility: hidden; }
+.menu-list li[aria-selected="true"] svg { visibility: visible; }
 
 button:hover, .button:hover, select:hover { background-color: var(--fill-hover); }
 button:active, .button:active { background-color: var(--fill-active); transform: scale(0.97); }
@@ -678,7 +751,9 @@ dialog form button:hover { background: var(--accent-soft-hover); }
     h1 { font-size: 28px; margin-top: 22px; }
     .subtitle { font-size: 14px; }
     .toolbar { padding: 8px; gap: 6px; border-radius: var(--radius); }
-    .toolbar select, .toolbar input[type="date"], .toolbar button, .toolbar .button { flex: 1 1 42%; min-width: 0; min-height: 42px; font-size: 14px; padding: 0 10px; }
+    .toolbar .menu, .toolbar input[type="date"], .toolbar button, .toolbar .button { flex: 1 1 42%; min-width: 0; min-height: 42px; font-size: 14px; padding: 0 10px; }
+    .toolbar .menu { display: flex; padding: 0; }
+    .toolbar .menu select { min-height: 42px; font-size: 14px; padding: 0 10px; }
     .toolbar select { padding-right: 30px; }
     .status { gap: 4px 12px; }
     .help { display: none; }
@@ -703,7 +778,7 @@ dialog form button:hover { background: var(--accent-soft-hover); }
    ------------------------------------------------------------------ */
 @media print {
     body { padding: 0; background: #fff; color: #000; }
-    .toolbar, .controls, .status, .banner, .help, .clue-bar, #kbd, dialog { display: none !important; }
+    .toolbar, .controls, .status, .banner, .help, .clue-bar, #kbd, dialog, .menu-list { display: none !important; }
     .grid-wrap { box-shadow: none; border-radius: 0; background: none; border: 2px solid #000; }
     table { --cell: 26px; }
     td { border: 1px solid #000; color: #000; }

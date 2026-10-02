@@ -127,6 +127,7 @@
 
         window.__puzzle = puzzle; // for tests and debugging
         startGame(puzzle);
+        if (window.Menus) window.Menus.refresh();
     } catch (e) {
         subtitleEl.textContent = '';
         warn('The puzzle could not be loaded. Reload the page to try again.');

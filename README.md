@@ -99,6 +99,7 @@ A word may have one clue or a list of clues. Which clue appears depends on the p
 - `create.html` and `create.js` the custom puzzle builder
 - `generator.js` the generator: grid, placement rules, numbering, word sets, seeded random. Runs in the browser and in Node
 - `crossword.js` the game: rendering, navigation, checking, persistence, stats
+- `menu.js` desktop-only menus drawn over the native selects, which stay the form fields. Phones keep the system picker
 - `crossword.css` styles, including dark mode and print
 - `favicon.svg` the tab icon, with `favicon.ico` as the fallback for browsers that ignore SVG icons
 - `words/*.json` word sets, listed in `words/index.json`
