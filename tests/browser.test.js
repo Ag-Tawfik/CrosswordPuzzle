@@ -540,6 +540,21 @@ describe('creator and archive', () => {
         const miniHref = await page.locator('.today-card').first().locator('a').nth(1).getAttribute('href');
         assert.ok(miniHref.includes('mini=1'));
 
+        // The cards sit in one row that scrolls sideways; arrows step it and hide at the ends
+        const track = page.locator('#today-track');
+        assert.ok(await page.locator('.today-card').evaluateAll(cards => cards.every(c => c.getBoundingClientRect().top === cards[0].getBoundingClientRect().top)), 'every card is on one row');
+        assert.ok(await track.evaluate(el => el.scrollWidth > el.clientWidth), 'the row overflows, so it scrolls');
+        assert.ok(await page.locator('#today-prev').isDisabled(), 'no way back from the start');
+        assert.ok(await page.locator('#today-next').isVisible(), 'the forward arrow shows on desktop');
+        await page.click('#today-next');
+        await page.waitForFunction(() => document.getElementById('today-track').scrollLeft > 100);
+        assert.ok(!(await page.locator('#today-prev').isDisabled()), 'the back arrow appears once scrolled');
+        await track.evaluate(el => { el.scrollLeft = el.scrollWidth; });
+        await page.waitForFunction(() => document.getElementById('today-next').disabled);
+        assert.ok(await page.locator('.today-card').last().evaluate(c => { const r = c.getBoundingClientRect(); return r.right <= window.innerWidth; }), 'the last card is fully in view at the end');
+        await track.evaluate(el => { el.scrollLeft = 0; });
+        await page.waitForFunction(() => document.getElementById('today-prev').disabled);
+
         // Solve the first set's Mini, come back: it is ticked and the Mini streak shows
         await page.locator('.today-card').first().locator('a').nth(1).click();
         await page.waitForFunction(() => window.__puzzle && window.__puzzle.mini);

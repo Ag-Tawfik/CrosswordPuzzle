@@ -71,8 +71,8 @@
         }
 
         const TICK = '<span class="tick" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-        const grid = document.getElementById('today-grid');
-        grid.innerHTML = '';
+        const track = document.getElementById('today-track');
+        track.innerHTML = '';
         for (const s of sets) {
             const card = document.createElement('div');
             card.className = 'today-card';
@@ -90,10 +90,31 @@
                 if (solved) a.setAttribute('aria-label', `${s.name} ${label}, solved`);
                 card.appendChild(a);
             }
-            grid.appendChild(card);
+            track.appendChild(card);
         }
         document.getElementById('today-random').href = `index.html?set=mixed&seed=${Math.floor(Math.random() * 1e9)}`;
         document.getElementById('today').hidden = false;
+
+        // The row scrolls sideways; arrows step it one card at a time for mouse
+        // users and hide at either end
+        const prev = document.getElementById('today-prev');
+        const next = document.getElementById('today-next');
+        const step = () => {
+            const card = track.querySelector('.today-card');
+            const gap = parseFloat(getComputedStyle(track).columnGap) || 14;
+            return card ? card.getBoundingClientRect().width + gap : 300;
+        };
+        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const slide = dir => track.scrollBy({ left: dir * step(), behavior: reduced ? 'auto' : 'smooth' });
+        const update = () => {
+            prev.disabled = track.scrollLeft <= 1;
+            next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+        };
+        prev.onclick = () => slide(-1);
+        next.onclick = () => slide(1);
+        track.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        update();
     }
 
     try {
