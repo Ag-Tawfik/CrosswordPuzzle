@@ -708,6 +708,7 @@ table.solved td.white .letter { animation: solve-pop 650ms cubic-bezier(0.2, 0.8
 }
 .banner.warn { background: var(--warn-bg); color: var(--warn-fg); }
 .banner.challenge { background: var(--accent-soft); color: var(--fg); }
+.banner-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .banner button { min-height: 34px; padding: 0 14px; background: var(--green); color: #fff; font-weight: 600; }
 .banner button:hover { background: var(--green); filter: brightness(0.94); }
 
