@@ -458,9 +458,10 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
     display: flex;
     align-items: stretch;
     gap: 8px;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 8px 0;
+    /* The frosted band spans the page so nothing peeks out beside it when it
+       floats over the clue lists; the controls stay centred at 680px inside */
+    margin: 0;
+    padding: 8px max(0px, calc((100% - 680px) / 2));
     background: var(--glass);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     backdrop-filter: saturate(180%) blur(20px);
@@ -842,7 +843,7 @@ dialog .alert-actions button.primary:hover { background: var(--accent-hover); }
     .controls { gap: 6px; }
     .control-group + .control-group { padding-left: 0; border-left: 0; }
     .control-group button { flex: 1 1 45%; padding: 0 6px; font-size: 14px; min-height: 42px; }
-    .clue-bar { padding: 6px 0; }
+    .clue-bar { padding: 6px max(0px, calc((100% - 680px) / 2)); }
     .active-clue { font-size: 15px; }
     .clues { gap: 12px; }
     .clues section { border-radius: var(--radius); }
