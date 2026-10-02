@@ -11,7 +11,7 @@ A crossword game that runs entirely in the browser. Every day gets a fresh puzzl
 - **Word sets** stored as JSON files with crossword-style clues (animals, food and drink, geography, sports, science, around the house), with several clues per word so repeats vary, plus a **Mixed** set that draws from all of them so the topic gives nothing away
 - **A solve moment**: the grid sweeps green, the time counts up, and a verdict compares you with your earlier solves of the same size
 - **Challenge a friend**: a link to the exact puzzle with your time to beat; they see the target while solving and the result against it when done. No server, it all lives in the link
-- **Stats and streaks** kept in the browser, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
+- **Stats and streaks** kept in the browser, with best and average times per grid size so a Mini is never compared with a 15×15, with a share button for your result, and an **archive calendar** showing which days you have solved, each day a link to that day's puzzle
 - **Difficulty modes**: easy marks wrong letters as you type, hard hides every check and reveal and uses harder clues
 - **Pencil mode** for tentative letters, **dark mode**, and **print** for a blank grid or the answer key
 - Works on phones: the grid scales to the screen, the active clue stays pinned at the top, and the keyboard stays open while you move between cells
@@ -55,7 +55,7 @@ Examples:
 ### Playing
 
 - Tap or click a cell or a clue to select a word. The clue appears in the bar above the grid, with previous and next word buttons
-- Type letters. The cursor skips filled cells and jumps to the next unfinished clue at the end of a word
+- Type letters. The cursor skips filled cells and jumps to the next unfinished clue at the end of a word, so a letter a crossing has already filled is never overwritten by the next keystroke
 - Arrow keys move along the current direction. Pressing an arrow across the direction switches it
 - Enter, Space, or tapping the selected cell again switches between across and down
 - Backspace clears and steps back; Delete clears the cell without moving. Tab leaves the grid

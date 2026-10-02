@@ -284,16 +284,21 @@ window.startGame = function (puzzle) {
 
     // Move to the next empty cell in the current word after the current cell,
     // otherwise to the first empty cell of the next unfinished clue
+    // Move to the next empty cell in the current word after the current cell,
+    // otherwise to the first empty cell of the next unfinished clue. A letter
+    // already filled by a crossing is never parked on, so the next keystroke
+    // cannot overwrite it. Only when the whole grid is full does the cursor
+    // walk along the word, so a wrong word can be retyped.
     function advance() {
         const { word, idx } = currentIndex();
         const later = word.slice(idx + 1).find(cell => cell.value === '');
         if (later) { setCurrent(later); return; }
-        if (idx + 1 < word.length) { setCurrent(word[idx + 1]); return; }
-        nextClue(1, true);
+        if (nextClue(1, true)) return;
+        if (idx + 1 < word.length) setCurrent(word[idx + 1]);
     }
 
     // Step to the next (dir = 1) or previous (dir = -1) clue. With onlyUnfinished,
-    // skip clues that are already fully filled.
+    // skip clues that are already fully filled. Returns whether it moved.
     function nextClue(dir, onlyUnfinished) {
         const list = orderedClues();
         const cl = clueFor(current.r, current.c, orientation);
@@ -302,9 +307,9 @@ window.startGame = function (puzzle) {
             const item = list[((start + dir * i) % list.length + list.length) % list.length];
             if (onlyUnfinished && isClueComplete(item.cl, item.o)) continue;
             goToClue(item.cl, item.o);
-            return;
+            return true;
         }
-        // Everything is filled: stay put
+        return false; // everything is filled: stay put
     }
 
     function retreat() {
@@ -575,7 +580,23 @@ window.startGame = function (puzzle) {
             lastMini: s.lastMini || null,
             history: Array.isArray(s.history) ? s.history : [],
             days: daysFromStats(s),
+            bySize: bySizeFromStats(s),
         };
+    }
+
+    // Solves, total time and best per grid size, as {"12": {solved, totalTime, best}}.
+    // A Mini is not compared with a 15x15. Stats saved before this record existed
+    // are read back from their history, which approximates the totals.
+    function bySizeFromStats(s) {
+        if (s.bySize && typeof s.bySize === 'object' && !Array.isArray(s.bySize)) return s.bySize;
+        const bySize = {};
+        for (const h of Array.isArray(s.history) ? s.history : []) {
+            const entry = bySize[h.size] || (bySize[h.size] = { solved: 0, totalTime: 0, best: null });
+            entry.solved += 1;
+            entry.totalTime += h.time;
+            if (entry.best === null || h.time < entry.best) entry.best = h.time;
+        }
+        return bySize;
     }
 
     // Which word sets were solved on which puzzle date, as {date: [set name, ...]}.
@@ -611,14 +632,18 @@ window.startGame = function (puzzle) {
             stats[lastKey] = today;
         }
 
-        const isBest = stats.best === null || elapsed < stats.best;
+        const size = stats.bySize[puzzle.rows] || (stats.bySize[puzzle.rows] = { solved: 0, totalTime: 0, best: null });
+        const isBest = size.best !== null && elapsed < size.best;
+        size.solved += 1;
+        size.totalTime += elapsed;
+        if (size.best === null || elapsed < size.best) size.best = elapsed;
         // Earlier solves of the same size, for the verdict: a Mini is not compared with a 15x15
         const similar = stats.history.filter(h => h.size === puzzle.rows);
         const average = similar.length ? Math.round(similar.reduce((sum, h) => sum + h.time, 0) / similar.length) : null;
         const bestSimilar = similar.length ? Math.min(...similar.map(h => h.time)) : null;
         stats.solved += 1;
         stats.totalTime += elapsed;
-        if (isBest) stats.best = elapsed;
+        if (stats.best === null || elapsed < stats.best) stats.best = elapsed;
         stats.history.unshift({ id, when: today, set: archiveName, seed: puzzle.seed, size: puzzle.rows, time: elapsed, reveals });
         stats.history = stats.history.slice(0, 50);
         if (puzzle.date) {
@@ -654,9 +679,13 @@ window.startGame = function (puzzle) {
             ['Puzzles solved', stats.solved],
             ['Current streak', dayWord(currentStreak(stats, false))],
             ['Mini streak', dayWord(currentStreak(stats, true))],
-            ['Best time', stats.best === null ? '–' : formatTime(stats.best)],
-            ['Average time', stats.solved ? formatTime(Math.round(stats.totalTime / stats.solved)) : '–'],
         ];
+        // Best and average per grid size, smallest first
+        Object.keys(stats.bySize).map(Number).sort((a, b) => a - b).forEach(n => {
+            const e = stats.bySize[n];
+            if (!e.solved) return;
+            rows.push([`${n}×${n}${n === 7 ? ' Mini' : ''}`, `best ${formatTime(e.best)} · average ${formatTime(Math.round(e.totalTime / e.solved))}`]);
+        });
         list.innerHTML = rows.map(([k, v]) => `<dt>${escapeHtml(String(k))}</dt><dd>${escapeHtml(String(v))}</dd>`).join('');
         if (stats.history.length) {
             const items = stats.history.slice(0, 10).map(h =>
