@@ -434,10 +434,30 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
    Today: the front door, one card per word set with its daily and Mini
    ------------------------------------------------------------------ */
 .today { max-width: 960px; margin: 0 auto; }
-.today-streaks { text-align: center; font-size: 13px; color: var(--muted); margin: 0 0 14px; font-variant-numeric: tabular-nums; }
+.today-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 12px; }
+.today-streaks { grid-column: 2; text-align: center; font-size: 13px; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
 .today-streaks strong { color: var(--fg); font-weight: 600; }
-.today-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+/* The cards sit in one row that scrolls sideways and snaps card by card. The
+   row bleeds to the page edges so the next card peeks in, fading out at the
+   sides; the scrollbar is hidden, since the peek and the arrows say more */
+.today-track {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    margin: 0 calc(-1 * var(--gutter));
+    padding: 4px var(--gutter) 14px;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent);
+}
+.today-track::-webkit-scrollbar { display: none; }
+.today-track:focus-visible { outline: none; }
 .today-card {
+    flex: 0 0 280px;
+    scroll-snap-align: start;
     background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: 0 0 0 var(--hairline) var(--separator), var(--shadow);
@@ -476,6 +496,30 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 .today-card a.solved .tick svg { visibility: visible; }
 .today-card a.solved { color: var(--muted); }
 .today-card .size { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Arrows at the top right of the row for mouse users, who cannot swipe;
+   touch screens get the row alone */
+.today-nav { grid-column: 3; justify-self: end; display: none; gap: 6px; }
+.today-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    transition: opacity 160ms ease, background-color 120ms ease;
+}
+.today-arrow svg { width: 16px; height: 16px; display: block; }
+.today-arrow:hover { background: var(--accent-soft-hover); }
+.today-arrow[disabled] { opacity: 0.35; pointer-events: none; }
+@media (hover: hover) and (pointer: fine) {
+    .today-nav { display: flex; }
+    .today-head { min-height: 32px; }
+}
 .today-actions { margin-top: 18px; }
 .today .help { display: block; }
 
