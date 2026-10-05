@@ -51,7 +51,7 @@
     ],
     "FROG": [
       "Croaking pond hopper",
-      "Tadpole, grown up"
+      "Kermit, for one"
     ],
     "SNAKE": [
       "Legless reptile",
@@ -168,7 +168,7 @@
     "LIZARD": "Scaly sunbather that may drop its tail",
     "TOAD": "Warty cousin of the frog",
     "SPIDER": "Eight-legged web spinner",
-    "BUTTERFLY": "Caterpillar, grown up",
+    "BUTTERFLY": "Monarch or Red Admiral",
     "MOTH": "Night flyer drawn to a flame",
     "BEETLE": "Insect with hard wing cases",
     "WASP": "Stinging insect with a narrow waist",
@@ -176,7 +176,7 @@
     "WORM": "Wriggler that the early bird catches"
   },
   "hard": {
-    "CAT": "Burglar or walk, with a nine-lives reputation",
+    "CAT": "Burglar or walk, or the one that got your tongue",
     "DOG": "Hot one in a bun, or a hound",
     "MOUSE": "It scurries beside your keyboard",
     "FISH": "Angle, or what you angle for",
@@ -210,20 +210,20 @@
     "PENGUIN": "Publisher with an orange spine",
     "TURTLE": "Neck style, or a Ninja with a shell",
     "BEE": "Spelling contest",
-    "ANT": "Adam's partner in the Marvel size business",
+    "ANT": "Picnic raider, or Marvel's shrinking Man",
     "ELEPHANT": "One in the room nobody mentions",
     "RHINO": "Money, in old slang, or a horned charger",
     "HIPPO": "Its name means river horse",
     "GORILLA": "Eight-hundred-pound presence",
-    "CHIMP": "Our closest cousin, for short",
+    "CHIMP": "Cheeta of the Tarzan films, for short",
     "LEOPARD": "It cannot change its spots",
     "CHEETAH": "Nought to sixty in three seconds, on four legs",
     "JAGUAR": "British marque with a leaping mascot",
     "HYENA": "It laughs last, at a carcass",
     "MEERKAT": "Insurance-advert sentry, simples",
     "KANGAROO": "Court that is no court at all",
-    "WOMBAT": "Its droppings are cubes",
-    "PLATYPUS": "Venomous, egg-laying, duck-billed oddity",
+    "WOMBAT": "Australian burrower with a backwards-facing pouch",
+    "PLATYPUS": "Monotreme that hunts by sensing electricity with its bill",
     "SLOTH": "Deadly sin with claws",
     "LLAMA": "Dalai Lama's near namesake, with a spit",
     "BISON": "Buffalo of the plains that is strictly no buffalo",
@@ -264,6 +264,6 @@
     "BEETLE": "Volkswagen classic",
     "WASP": "Initials of old-money Americans",
     "SNAIL": "Mail that goes slowly",
-    "WORM": "Early bird's reward"
+    "WORM": "Bookish one, or self-spreading malware"
   }
 }
