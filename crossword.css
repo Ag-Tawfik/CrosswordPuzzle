@@ -46,6 +46,7 @@
     --grid-line: #c7c7cc;
     --grid-frame: #1d1d1f;
     --cell-bg: #ffffff;
+    --thumb-cell: #ffffff;
     --cell-fg: #1d1d1f;
     --cell-number: #6e6e73;
     --black-bg: #1d1d1f;
@@ -106,6 +107,7 @@
         --grid-line: #48484a;
         --grid-frame: #3a3a3c;
         --cell-bg: #2c2c2e;
+        --thumb-cell: #d1d1d6;
         --cell-fg: #f5f5f7;
         --cell-number: #98989d;
         --black-bg: #000000;
@@ -156,6 +158,7 @@
     --grid-line: #48484a;
     --grid-frame: #3a3a3c;
     --cell-bg: #2c2c2e;
+    --thumb-cell: #d1d1d6;
     --cell-fg: #f5f5f7;
     --cell-number: #98989d;
     --black-bg: #000000;
@@ -434,13 +437,46 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
    Today: the front door, one card per word set with its daily and Mini
    ------------------------------------------------------------------ */
 .today { max-width: 960px; margin: 0 auto; }
-.today-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 12px; }
-.today-streaks { grid-column: 2; text-align: center; font-size: 13px; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
+.today-streaks { text-align: center; font-size: 13px; color: var(--muted); margin: -6px 0 18px; font-variant-numeric: tabular-nums; }
 .today-streaks strong { color: var(--fg); font-weight: 600; }
+
+/* The featured card: today's pick, with a thumbnail of its real grid. The whole
+   card is the link; the button inside is a label for it */
+.featured {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px;
+    margin-bottom: 26px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 0 0 var(--hairline) var(--separator), var(--shadow);
+    color: var(--fg);
+    text-decoration: none;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.featured:hover { text-decoration: none; transform: translateY(-1px); box-shadow: 0 0 0 var(--hairline) var(--separator), var(--shadow-grid); }
+.featured:active { transform: none; }
+.featured-thumb { flex: 0 0 136px; width: 136px; height: 136px; border-radius: 12px; overflow: hidden; background: var(--black-bg); }
+.featured-thumb svg { display: block; width: 100%; height: 100%; fill: var(--thumb-cell); }
+.featured-body { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.eyebrow { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.featured.solved .eyebrow { color: var(--green); }
+.featured h2 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+.featured-meta { margin: 0 0 10px; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.featured .button { pointer-events: none; }
+
+/* The shelf: a title on the left, arrows for mouse users on the right */
+.today-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 10px; }
+.shelf-title { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+
 /* The cards sit in one row that scrolls sideways and snaps card by card. The
-   row bleeds to the page edges so the next card peeks in, fading out at the
-   sides; the scrollbar is hidden, since the peek and the arrows say more */
+   row bleeds to the page edges so the next card peeks in, and whichever edge
+   has more beyond it fades out; the scrollbar is hidden, since the peek, the
+   fade and the arrows say more */
 .today-track {
+    --fade-l: 0px;
+    --fade-r: 0px;
     display: flex;
     gap: 14px;
     overflow-x: auto;
@@ -450,9 +486,11 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
     margin: 0 calc(-1 * var(--gutter));
     padding: 4px var(--gutter) 14px;
     scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent);
-    mask-image: linear-gradient(to right, transparent, #000 var(--gutter), #000 calc(100% - var(--gutter)), transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent);
 }
+.today-track.fade-l { --fade-l: 48px; }
+.today-track.fade-r { --fade-r: 48px; }
 .today-track::-webkit-scrollbar { display: none; }
 .today-track:focus-visible { outline: none; }
 .today-card {
@@ -463,7 +501,22 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
     box-shadow: 0 0 0 var(--hairline) var(--separator), var(--shadow);
     padding: 14px 10px 8px;
 }
-.today-card h2 { margin: 0 8px 8px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.card-head { display: flex; align-items: center; gap: 10px; margin: 0 8px 10px; }
+.card-head h2 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.mono {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c);
+    background: color-mix(in srgb, var(--c) 16%, transparent);
+}
+.today-sub { margin: -6px 8px 8px 50px; font-size: 12px; color: var(--muted); }
 .today-card a {
     display: flex;
     align-items: center;
@@ -478,27 +531,30 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 }
 .today-card a:hover { background: var(--fill); text-decoration: none; }
 .today-card a + a { position: relative; }
-.today-card a + a::before { content: ""; position: absolute; left: 44px; right: 8px; top: 0; border-top: var(--hairline) solid var(--separator); }
+.today-card a + a::before { content: ""; position: absolute; left: 8px; right: 8px; top: 0; border-top: var(--hairline) solid var(--separator); }
 .today-card a:hover::before, .today-card a:hover + a::before { border-color: transparent; }
+.today-card .size { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.today-card .chev { flex: 0 0 16px; width: 16px; height: 16px; color: var(--separator-strong); }
+.today-card .chev svg { width: 16px; height: 16px; display: block; }
 .today-card .tick {
-    flex: 0 0 26px;
-    width: 26px;
-    height: 26px;
+    display: none;
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
-    box-shadow: inset 0 0 0 var(--hairline) var(--separator-strong);
-    display: inline-flex;
+    background: var(--accent);
+    color: var(--accent-fg);
     align-items: center;
     justify-content: center;
-    color: var(--accent-fg);
 }
-.today-card .tick svg { width: 14px; height: 14px; visibility: hidden; }
-.today-card a.solved .tick { background: var(--accent); box-shadow: none; }
-.today-card a.solved .tick svg { visibility: visible; }
+.today-card .tick svg { width: 12px; height: 12px; }
+.today-card a.solved .tick { display: inline-flex; }
+.today-card a.solved .chev { display: none; }
 .today-card a.solved { color: var(--muted); }
-.today-card .size { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 /* Arrows at the top right of the row for mouse users, who cannot swipe;
    touch screens get the row alone */
-.today-nav { grid-column: 3; justify-self: end; display: none; gap: 6px; }
+.today-nav { display: none; gap: 6px; }
 .today-arrow {
     display: inline-flex;
     align-items: center;
@@ -518,10 +574,14 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 .today-arrow[disabled] { opacity: 0.35; pointer-events: none; }
 @media (hover: hover) and (pointer: fine) {
     .today-nav { display: flex; }
-    .today-head { min-height: 32px; }
 }
-.today-actions { margin-top: 18px; }
-.today .help { display: block; }
+
+/* Secondary ways in, as plain links under the shelf */
+.today-actions { margin: 14px 0 0; text-align: center; font-size: 14px; }
+.today-actions .link { color: var(--accent); font-weight: 500; padding: 4px 8px; border-radius: 8px; }
+.today-actions .link:hover { background: var(--accent-soft); text-decoration: none; }
+.today-actions .dot { color: var(--muted); margin: 0 4px; }
+.today .help { display: block; margin-top: 10px; }
 
 /* On the front door the puzzle chrome is hidden */
 body.today-mode .toolbar, body.today-mode .status, body.today-mode .clue-bar, body.today-mode .grid-wrap,
@@ -945,6 +1005,10 @@ dialog .alert-actions button.primary:hover { background: var(--accent-hover); }
     .control-group button { flex: 1 1 45%; padding: 0 6px; font-size: 14px; min-height: 42px; }
     .clue-bar { padding: 6px max(0px, calc((100% - 680px) / 2)); }
     .active-clue { font-size: 15px; }
+    .featured { gap: 14px; padding: 12px; }
+    .featured-thumb { flex-basis: 104px; width: 104px; height: 104px; }
+    .featured h2 { font-size: 22px; }
+    .shelf-title { font-size: 18px; }
     .clues { gap: 12px; }
     .clues section { border-radius: var(--radius); }
     .clue { font-size: 14px; padding: 8px 8px; }

@@ -35,18 +35,25 @@
     <div class="banner warn" id="load-warning"></div>
 
     <section id="today" class="today" hidden aria-label="Today's puzzles">
+        <p class="today-streaks" id="today-streaks" hidden></p>
+        <a class="featured" id="today-featured" hidden>
+            <div class="featured-thumb" id="featured-thumb" aria-hidden="true"></div>
+            <div class="featured-body">
+                <p class="eyebrow" id="featured-eyebrow">Today's pick</p>
+                <h2 id="featured-name"></h2>
+                <p class="featured-meta" id="featured-meta"></p>
+                <span class="button primary" id="featured-cta">Play</span>
+            </div>
+        </a>
         <div class="today-head">
-            <p class="today-streaks" id="today-streaks" hidden></p>
+            <h2 class="shelf-title">All sets</h2>
             <div class="today-nav">
                 <button type="button" class="today-arrow" id="today-prev" aria-label="Scroll back" disabled><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M12.5 4 6.5 10l6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
                 <button type="button" class="today-arrow" id="today-next" aria-label="Scroll on" disabled><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m7.5 4 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </div>
         </div>
         <div class="today-track" id="today-track"></div>
-        <div class="row today-actions">
-            <a class="button primary" id="today-random" href="index.html?set=mixed">Random puzzle</a>
-            <a class="button" href="create.html">Create your own</a>
-        </div>
+        <p class="today-actions"><a class="link" id="today-random" href="index.html?set=mixed">Random puzzle</a><span class="dot" aria-hidden="true">·</span><a class="link" href="create.html">Create your own</a></p>
         <p class="help">Each word set has a daily puzzle and a Mini. Solved ones get a tick. Progress is saved in this browser.</p>
     </section>
 
