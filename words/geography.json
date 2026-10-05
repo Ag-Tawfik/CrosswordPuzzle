@@ -28,7 +28,7 @@
     ],
     "CHINA": [
       "Home of the Great Wall",
-      "Most populous country in Asia"
+      "Country of the Yangtze and the panda"
     ],
     "INDIA": [
       "Home of the Taj Mahal",
@@ -173,10 +173,10 @@
     "CANADA": "Goose with a reputation",
     "MEXICO": "Wave started in a stadium, supposedly",
     "SPAIN": "Rain stays mainly in its plain, in song",
-    "ITALY": "Boot-shaped republic",
+    "ITALY": "Where the Renaissance began",
     "FRANCE": "Hexagon, to its citizens",
     "GREECE": "Where the marathon was first run",
-    "RUSSIA": "Largest by area, by far",
+    "RUSSIA": "Where the Tsars ruled",
     "KENYA": "Obama's paternal homeland",
     "PERU": "Paddington's origin",
     "CHILE": "Country spelt almost like a pepper",
@@ -184,7 +184,7 @@
     "NILE": "Longest river, in dispute with the Amazon",
     "AMAZON": "Bezos's bookshop, originally",
     "ALPS": "Hannibal crossed them with elephants",
-    "ANDES": "Longest mountain range on land",
+    "ANDES": "Spine of South America",
     "SAHARA": "Its name just means desert",
     "EVEREST": "Chomolungma, to Tibetans",
     "PACIFIC": "Peaceful by name, largest by size",
@@ -199,7 +199,7 @@
     "MADRID": "Real's home",
     "LISBON": "Westernmost capital on the European mainland",
     "DUBLIN": "Ulysses' setting",
-    "ATHENS": "Minerva's owl's city",
+    "ATHENS": "Athena's city, with the Parthenon",
     "VIENNA": "Waltz capital",
     "PRAGUE": "Spring of 1968",
     "MOSCOW": "Napoleon reached it, then retreated",
@@ -227,7 +227,7 @@
     "IRAN": "Persia, since 1935",
     "VIETNAM": "War that Hollywood keeps revisiting",
     "THAILAND": "Siam, now",
-    "KOREA": "Divided peninsula",
+    "KOREA": "Kimchi's homeland, north or south",
     "NEPAL": "Only flag that is not a rectangle",
     "MOROCCO": "Casablanca's country",
     "GHANA": "Gold Coast, formerly",
@@ -259,15 +259,15 @@
     "FLORIDA": "Everglades' state",
     "TUNDRA": "Where the permafrost lies",
     "PENINSULA": "Almost an island, by its Latin name",
-    "GLACIER": "River of ice",
+    "GLACIER": "Mint, or what carved the fjords",
     "CANYON": "Grand, in Arizona",
     "VALLEY": "Silicon, in California",
     "PLATEAU": "Level reached, and no higher",
     "EQUATOR": "Zero degrees latitude",
     "CAPITAL": "Letter case, or where parliament sits",
-    "ATLAS": "Titan who held up the sky, or a book of maps",
+    "ATLAS": "Titan who held up the sky",
     "COMPASS": "It always points the same way",
-    "LATITUDE": "Freedom to act, or distance from the equator",
+    "LATITUDE": "Leeway",
     "BORDER": "Collie, or the edge of a country"
   }
 }
