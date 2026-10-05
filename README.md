@@ -78,7 +78,7 @@ Every puzzle is a URL, so any of them can be shared, bookmarked or replayed.
 |---|---|---|
 | `set` | Word set: the file name in `words/` without `.json`, or `mixed` for every set in one pool | `animals` |
 | `size` | Grid size, 8 to 20 | `12` |
-| `seed` | Puzzle number; the same number always gives the same puzzle | Today's date (UTC) |
+| `seed` | Puzzle number; the same number always gives the same puzzle | Today's date, on your clock |
 | `date` | A past day's daily, as `YYYY-MM-DD`. Overrides `seed` | |
 | `mini` | `1` for the Mini, a 7×7 of the set. Overrides `size` | |
 | `custom` | A puzzle made on the create page. Overrides `set` | |

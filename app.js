@@ -42,6 +42,14 @@
         try { return JSON.parse(localStorage.getItem(key)); } catch (e) { return null; }
     }
 
+    // The player's own calendar day, as YYYY-MM-DD. The day, the daily puzzle
+    // and the streaks all turn over at local midnight, not at UTC midnight,
+    // so an evening solve in New York counts for the day it was made.
+    function localDate(d = new Date()) {
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
     function previousDay(dateStr) {
         const d = new Date(dateStr + 'T00:00:00Z');
         d.setUTCDate(d.getUTCDate() - 1);
@@ -58,7 +66,9 @@
 
         const stats = readJson('crossword:stats') || {};
         const solvedToday = (stats.days && stats.days[today]) || [];
-        const alive = last => last === today || last === previousDay(today);
+        // A date after today can only be a UTC-dated record from before the day
+        // followed local time; it counts as today's
+        const alive = last => last === today || last === previousDay(today) || last > today;
         const streak = alive(stats.lastDaily) ? stats.streak || 0 : 0;
         const miniStreak = alive(stats.lastMini) ? stats.miniStreak || 0 : 0;
         const streaksEl = document.getElementById('today-streaks');
@@ -118,7 +128,7 @@
     }
 
     try {
-        const today = new Date().toISOString().slice(0, 10);
+        const today = localDate();
 
         const mini = params.get('mini') === '1';
         let size = parseInt(params.get('size') || '12', 10);

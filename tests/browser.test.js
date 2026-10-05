@@ -204,7 +204,7 @@ describe('desktop play', () => {
         await page.waitForFunction(() => document.getElementById('challenge-button').innerText === 'Link copied');
         const challenge = await page.evaluate(() => navigator.clipboard.readText());
         const seconds = await page.evaluate(() => { const [m, s] = document.getElementById('timer').innerText.split(':'); return Number(m) * 60 + Number(s); });
-        const today = new Date().toISOString().slice(0, 10);
+        const today = await page.evaluate(() => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; });
         assert.match(challenge, /^Science Crossword: can you beat \d+:\d\d\?\n/);
         const link = challenge.split('\n')[1];
         assert.ok(link.includes(`set=science&size=12&date=${today}&beat=${seconds}`), `link pins the puzzle and the time: ${link}`);
@@ -567,6 +567,65 @@ describe('creator and archive', () => {
         assert.ok(!(await page.locator('#today-streaks').innerText()).includes('Streak 1'), 'no full streak yet');
         assert.ok((await page.locator('#today-random').getAttribute('href')).includes('set=mixed&seed='));
         assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
+    test('the day turns over at local midnight, not UTC: Today, the daily and the streak follow the player\'s clock', async () => {
+        // Pick a zone whose calendar date differs from UTC right now
+        const timezoneId = new Date().getUTCHours() < 12 ? 'Etc/GMT+12' : 'Pacific/Kiritimati';
+        const page = await newPage({ timezoneId });
+        await go(page, base + 'index.html');
+        await page.evaluate(() => localStorage.clear());
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        const dates = await page.evaluate(() => {
+            const d = new Date(), p = n => String(n).padStart(2, '0');
+            return { local: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`, utc: d.toISOString().slice(0, 10) };
+        });
+        assert.notEqual(dates.local, dates.utc, 'the chosen zone is on a different date from UTC');
+        const expected = await page.evaluate(() => new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+        assert.equal(await page.locator('.subtitle').innerText(), expected, 'Today shows the local date');
+
+        // The daily is dated with the local day and seeded from it
+        await page.locator('.today-card').first().locator('a').first().click();
+        await page.waitForFunction(() => window.__puzzle);
+        const daily = await page.evaluate(() => ({ date: window.__puzzle.date, daily: window.__puzzle.daily, seed: window.__puzzle.seed }));
+        assert.equal(daily.date, dates.local);
+        assert.ok(daily.daily, 'the local day\'s puzzle is the daily');
+        assert.equal(daily.seed, Number(dates.local.replace(/-/g, '')));
+
+        // A solve is recorded against the local day and starts the streak
+        await page.goto(base + 'index.html?set=animals&mini=1');
+        await page.waitForFunction(() => window.__puzzle && window.__puzzle.mini);
+        await solve(page);
+        const stats = await page.evaluate(() => JSON.parse(localStorage.getItem('crossword:stats')));
+        assert.equal(stats.lastMini, dates.local);
+        assert.equal(stats.miniStreak, 1);
+        assert.ok(stats.days[dates.local].includes('Animals Mini'));
+
+        // A record dated by UTC from before the change still counts as today's
+        await page.evaluate(utc => {
+            const s = JSON.parse(localStorage.getItem('crossword:stats'));
+            s.lastDaily = utc; s.streak = 4;
+            localStorage.setItem('crossword:stats', JSON.stringify(s));
+        }, dates.utc);
+        await page.goto(base + 'index.html');
+        await page.waitForFunction(() => window.__puzzle !== undefined);
+        assert.match(await page.locator('#today-streaks').innerText(), /Streak 4/);
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
+    test('the page carries a description and social card tags with an absolute image that exists', async () => {
+        const page = await newPage();
+        for (const file of ['index.html', 'create.html']) {
+            const html = await (await page.request.get(base + file)).text();
+            assert.match(html, /<meta name="description" content="[^"]{40,}">/, `${file} has a description`);
+            assert.match(html, /<meta property="og:image" content="https:\/\/ag-tawfik\.github\.io\/CrosswordPuzzle\/docs\/social\.png">/, `${file} names an absolute social image`);
+            assert.match(html, /<meta name="twitter:card" content="summary_large_image">/, `${file} has a Twitter card`);
+        }
+        const img = await page.request.get(base + 'docs/social.png');
+        assert.ok(img.ok(), 'the social image is served');
+        assert.equal(img.headers()['content-type'], 'image/png');
         await page.context().close();
     });
 
