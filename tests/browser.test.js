@@ -545,6 +545,20 @@ describe('creator and archive', () => {
         assert.ok(await page.locator('.today-card').evaluateAll(cards => cards.every(c => c.getBoundingClientRect().top === cards[0].getBoundingClientRect().top)), 'every card is on one row');
         assert.ok(await track.evaluate(el => el.scrollWidth > el.clientWidth), 'the row overflows, so it scrolls');
         assert.ok(await page.locator('#today-prev').isDisabled(), 'no way back from the start');
+        assert.ok(await track.evaluate(el => el.classList.contains('fade-r') && !el.classList.contains('fade-l')), 'only the far edge fades at the start');
+
+        // The featured card: today's pick rotates with the date and shows a thumbnail of its real grid
+        const featured = page.locator('#today-featured');
+        assert.ok(await featured.isVisible(), 'a featured card shows');
+        const sets = (await (await page.request.get(base + 'words/index.json')).json()).concat([{ key: 'mixed', name: 'Mixed' }]);
+        const dayNumber = await page.evaluate(() => { const d = new Date(), p = n => String(n).padStart(2, '0'); return Math.round(Date.parse(`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T00:00:00Z`) / 864e5); });
+        const pick = sets[dayNumber % sets.length];
+        assert.ok((await featured.getAttribute('href')).endsWith(`set=${pick.key}`), `the pick rotates with the date: ${pick.key}`);
+        assert.equal(await page.locator('#featured-name').innerText(), pick.name);
+        assert.match(await page.locator('#featured-meta').innerText(), /^12×12 · \d+ words$/);
+        assert.ok(await page.locator('#featured-thumb rect').count() > 60, 'the thumbnail draws the white cells');
+        assert.equal(await page.locator('#featured-eyebrow').evaluate(el => el.textContent), "Today's pick");
+        assert.equal(await page.locator('.today-card .mono').count(), sets.length, 'every card has a monogram');
         assert.ok(await page.locator('#today-next').isVisible(), 'the forward arrow shows on desktop');
         await page.click('#today-next');
         await page.waitForFunction(() => document.getElementById('today-track').scrollLeft > 100);
@@ -552,6 +566,7 @@ describe('creator and archive', () => {
         await track.evaluate(el => { el.scrollLeft = el.scrollWidth; });
         await page.waitForFunction(() => document.getElementById('today-next').disabled);
         assert.ok(await page.locator('.today-card').last().evaluate(c => { const r = c.getBoundingClientRect(); return r.right <= window.innerWidth; }), 'the last card is fully in view at the end');
+        assert.ok(await track.evaluate(el => el.classList.contains('fade-l') && !el.classList.contains('fade-r')), 'only the near edge fades at the end');
         await track.evaluate(el => { el.scrollLeft = 0; });
         await page.waitForFunction(() => document.getElementById('today-prev').disabled);
 
@@ -566,6 +581,20 @@ describe('creator and archive', () => {
         assert.match(await page.locator('#today-streaks').innerText(), /Mini streak 1/);
         assert.ok(!(await page.locator('#today-streaks').innerText()).includes('Streak 1'), 'no full streak yet');
         assert.ok((await page.locator('#today-random').getAttribute('href')).includes('set=mixed&seed='));
+        assert.match(await page.locator('.today-card').first().locator('.today-sub').innerText(), /1 of 2 solved/);
+
+        // Once the pick's daily is solved, the featured card says so
+        await page.evaluate(name => {
+            const d = new Date(), p = n => String(n).padStart(2, '0');
+            const today = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            const s = JSON.parse(localStorage.getItem('crossword:stats'));
+            s.days[today] = (s.days[today] || []).concat([name]);
+            localStorage.setItem('crossword:stats', JSON.stringify(s));
+        }, pick.name);
+        await page.reload(); await page.waitForFunction(() => window.__puzzle !== undefined);
+        assert.ok(await featured.evaluate(el => el.classList.contains('solved')));
+        assert.equal(await page.locator('#featured-eyebrow').evaluate(el => el.textContent), 'Solved today');
+        assert.equal(await page.locator('#featured-cta').innerText(), 'Open');
         assert.deepEqual(page.errors, []);
         await page.context().close();
     });

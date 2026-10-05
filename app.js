@@ -56,7 +56,32 @@
         return d.toISOString().slice(0, 10);
     }
 
-    function showToday(sets, today) {
+    const MIXED = { key: 'mixed', name: 'Mixed' };
+    const MIXED_POOL = 150; // words drawn per puzzle from the mixed set
+    let index = []; // the word sets listed in words/index.json, set once loaded
+
+    async function loadWordSet(setKey) {
+        if (setKey === MIXED.key) {
+            const files = await Promise.all(index.map(s => loadJson(`words/${s.key}.json`)));
+            return Crossword.mergeWordSets(files, MIXED.name, MIXED.key);
+        }
+        return Crossword.wordSetFromObject(await loadJson(`words/${setKey}.json`), setKey);
+    }
+
+    // The mixed set is too big to place whole; each seed draws its own hand of words.
+    // The placer runs many times and keeps the best layout. Each run costs about
+    // as much as the pool has words, so bigger pools get fewer runs: the work stays
+    // near that of a 36-word set at 500 runs, and the result changes little past 100
+    function placeWords(wordSet, setKey, size, seed) {
+        const pool = setKey === MIXED.key ? Crossword.samplePool(wordSet.words(), MIXED_POOL, seed) : wordSet.words();
+        const attempts = Math.max(100, Math.min(500, Math.round(18000 / Math.max(1, pool.length))));
+        return Crossword.generateCrossword(size, size, pool, attempts, seed);
+    }
+
+    // One tint per word set, for the monogram on its card
+    const TINTS = ['#007aff', '#ff9500', '#34c759', '#af52de', '#ff2d55', '#5ac8fa', '#5856d6', '#ff3b30', '#ffcc00', '#a2845e'];
+
+    async function showToday(sets, today) {
         const theme = (() => { try { return localStorage.getItem('crossword:theme'); } catch (e) { return null; } })();
         if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
         document.body.classList.add('today-mode');
@@ -80,33 +105,80 @@
             streaksEl.hidden = false;
         }
 
+        // The shelf: one card per set, a tinted monogram, its daily and its Mini
         const TICK = '<span class="tick" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8.5 6.5 12 13 4.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+        const CHEV = '<span class="chev" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m7.5 4 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
         const track = document.getElementById('today-track');
         track.innerHTML = '';
-        for (const s of sets) {
+        sets.forEach((s, i) => {
             const card = document.createElement('div');
             card.className = 'today-card';
+            const head = document.createElement('div');
+            head.className = 'card-head';
+            const mono = document.createElement('span');
+            mono.className = 'mono';
+            mono.style.setProperty('--c', TINTS[i % TINTS.length]);
+            mono.textContent = s.name.charAt(0).toUpperCase();
+            mono.setAttribute('aria-hidden', 'true');
             const h2 = document.createElement('h2');
             h2.textContent = s.name;
-            card.appendChild(h2);
+            head.append(mono, h2);
+            card.appendChild(head);
+            let done = 0;
+            const links = [];
             for (const [label, size, mini, name] of [['Daily puzzle', '12×12', false, s.name], ['Mini', '7×7', true, `${s.name} Mini`]]) {
                 const a = document.createElement('a');
                 const q = new URLSearchParams({ set: s.key });
                 if (mini) q.set('mini', '1');
                 a.href = `index.html?${q}`;
                 const solved = solvedToday.includes(name);
+                if (solved) done++;
                 a.className = solved ? 'solved' : '';
-                a.innerHTML = `${TICK}<span>${label}</span><span class="size">${size}</span>`;
+                a.innerHTML = `<span>${label}</span><span class="size">${size}</span>${TICK}${CHEV}`;
                 if (solved) a.setAttribute('aria-label', `${s.name} ${label}, solved`);
-                card.appendChild(a);
+                links.push(a);
             }
+            if (done) {
+                const sub = document.createElement('p');
+                sub.className = 'today-sub';
+                sub.textContent = done === 2 ? 'Both solved' : '1 of 2 solved';
+                card.appendChild(sub);
+            }
+            card.append(...links);
             track.appendChild(card);
-        }
+        });
         document.getElementById('today-random').href = `index.html?set=mixed&seed=${Math.floor(Math.random() * 1e9)}`;
+
+        // The featured card: one set's daily, rotating with the date, drawn as a
+        // thumbnail of today's real grid. If it cannot be built the shelf still shows.
+        try {
+            const dayNumber = Math.round(Date.parse(today + 'T00:00:00Z') / 864e5);
+            const pick = sets[dayNumber % sets.length];
+            const seed = Number(today.replace(/-/g, ''));
+            const [grid, result] = placeWords(await loadWordSet(pick.key), pick.key, 12, seed);
+            const n = grid.length;
+            let rects = '';
+            grid.forEach((row, r) => row.forEach((cell, c) => {
+                if (cell.letter) rects += `<rect x="${c + 0.06}" y="${r + 0.06}" width="0.88" height="0.88"/>`;
+            }));
+            document.getElementById('featured-thumb').innerHTML = `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges">${rects}</svg>`;
+            const featured = document.getElementById('today-featured');
+            const solved = solvedToday.includes(pick.name);
+            featured.href = `index.html?set=${pick.key}`;
+            featured.classList.toggle('solved', solved);
+            document.getElementById('featured-eyebrow').textContent = solved ? 'Solved today' : "Today's pick";
+            document.getElementById('featured-name').textContent = pick.name;
+            document.getElementById('featured-meta').textContent = `${n}×${n} · ${result.placed.length} words`;
+            document.getElementById('featured-cta').textContent = solved ? 'Open' : 'Play';
+            featured.hidden = false;
+        } catch (e) {
+            console.warn('Featured puzzle not shown:', e);
+        }
+
         document.getElementById('today').hidden = false;
 
         // The row scrolls sideways; arrows step it one card at a time for mouse
-        // users and hide at either end
+        // users and hide at either end. The edge with more beyond it fades out.
         const prev = document.getElementById('today-prev');
         const next = document.getElementById('today-next');
         const step = () => {
@@ -119,6 +191,8 @@
         const update = () => {
             prev.disabled = track.scrollLeft <= 1;
             next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 1;
+            track.classList.toggle('fade-l', !prev.disabled);
+            track.classList.toggle('fade-r', !next.disabled);
         };
         prev.onclick = () => slide(-1);
         next.onclick = () => slide(1);
@@ -136,16 +210,14 @@
         size = Math.max(8, Math.min(20, size));
         if (mini) size = 7;
 
-        const index = await loadJson('words/index.json');
+        index = await loadJson('words/index.json');
         if (!Array.isArray(index) || index.length === 0) throw new Error('No word sets found');
 
-        const MIXED = { key: 'mixed', name: 'Mixed' };
-        const MIXED_POOL = 150; // words drawn per puzzle from the mixed set
         const sets = index.concat([MIXED]);
 
         // --- Today: the front door ----------------------------------------------------
         if ([...params.keys()].length === 0) {
-            showToday(sets, today);
+            await showToday(sets, today);
             window.__puzzle = null; // for tests: loading is finished, there is no puzzle
             return;
         }
@@ -177,23 +249,11 @@
             // A custom puzzle keeps a fixed layout unless a seed is given explicitly
             seed = hasSeed ? Number(seedParam) : Crossword.hash(customParam) % 1000000000;
             puzzleDate = null;
-        } else if (setKey === MIXED.key) {
-            const files = await Promise.all(index.map(s => loadJson(`words/${s.key}.json`)));
-            wordSet = Crossword.mergeWordSets(files, MIXED.name, MIXED.key);
-            seed = puzzleDate !== null ? Number(puzzleDate.replace(/-/g, '')) : Number(seedParam);
         } else {
-            wordSet = Crossword.wordSetFromObject(await loadJson(`words/${setKey}.json`), setKey);
+            wordSet = await loadWordSet(setKey);
             seed = puzzleDate !== null ? Number(puzzleDate.replace(/-/g, '')) : Number(seedParam);
         }
-
-        // The mixed set is too big to place whole; each seed draws its own hand of words
-        const pool = setKey === MIXED.key ? Crossword.samplePool(wordSet.words(), MIXED_POOL, seed) : wordSet.words();
-
-        // The placer runs many times and keeps the best layout. Each run costs about
-        // as much as the pool has words, so bigger pools get fewer runs: the work stays
-        // near that of a 36-word set at 500 runs, and the result changes little past 100
-        const attempts = Math.max(100, Math.min(500, Math.round(18000 / Math.max(1, pool.length))));
-        const [grid, result] = Crossword.generateCrossword(size, size, pool, attempts, seed);
+        const [grid, result] = placeWords(wordSet, setKey, size, seed);
         const puzzle = Object.assign(Crossword.puzzleToObject(grid, result, wordSet, seed), {
             set: setKey,
             setName: wordSet.name,

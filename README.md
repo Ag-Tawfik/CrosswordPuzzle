@@ -15,7 +15,7 @@ No server, no build step, no account. Static HTML, CSS and JavaScript, hosted on
 
 <img src="docs/today.png" alt="Today: one card per word set, with its daily puzzle and Mini, ticked once solved" width="820">
 
-<sub>Today, the front door. One card per word set in a row that slides sideways, ticked once solved.</sub>
+<sub>Today, the front door: a featured pick with its grid, then every word set in a row that slides sideways.</sub>
 
 </div>
 
