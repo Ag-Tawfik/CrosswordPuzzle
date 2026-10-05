@@ -66,7 +66,7 @@ No server, no build step, no account. Static HTML, CSS and JavaScript, hosted on
 
 **Finishing.** The grid sweeps green, the time counts up, and a verdict compares you with your earlier solves of the same size. *Share* copies your result; *Challenge a friend* copies a link with your time to beat.
 
-**Around the game.** *Today* lists every set's daily and Mini. *Archive* is a calendar of the current set with solved days filled in, each a link. *Stats* shows solves, streaks, and best and average times per size. *Reset* clears the grid after asking. *Dark* switches the theme, which follows your system by default.
+**Around the game.** *Today* lists every set's daily and Mini. *Archive* is a calendar of the current set with solved days filled in, each a link. *Stats* shows solves, streaks, and best and average times per size, and makes a backup code that carries them to another browser or phone. Under the clues, *Report it* opens a GitHub issue prefilled with the clue in view. *Reset* clears the grid after asking. *Dark* switches the theme, which follows your system by default.
 
 Progress, stats, mode and theme live in your browser. A streak counts consecutive days on which you solved that day's puzzle; the Mini keeps its own.
 

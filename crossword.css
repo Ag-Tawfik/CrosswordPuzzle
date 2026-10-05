@@ -582,11 +582,33 @@ button.link:active { background: var(--accent-soft-hover); transform: none; }
 .today-actions .link:hover { background: var(--accent-soft); text-decoration: none; }
 .today-actions .dot { color: var(--muted); margin: 0 4px; }
 .today .help { display: block; margin-top: 10px; }
+.today .help.intro { margin: -8px auto 22px; max-width: 560px; }
+
+/* Report a clue: one quiet line under the clue lists */
+.report-line { text-align: center; font-size: 13px; color: var(--muted); margin: 16px 0 0; }
+.report-line a { color: var(--accent); font-weight: 500; }
+
+/* Restore dialog */
+#restore-text {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 12px;
+    padding: 10px;
+    font: inherit;
+    font-size: 13px;
+    border: var(--hairline) solid var(--separator-strong);
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--fg);
+    resize: vertical;
+}
+dialog .error { color: var(--red) !important; margin-top: 8px !important; }
 
 /* On the front door the puzzle chrome is hidden */
 body.today-mode .toolbar, body.today-mode .status, body.today-mode .clue-bar, body.today-mode .grid-wrap,
 body.today-mode .controls, body.today-mode .page > .help, body.today-mode .clues,
-body.today-mode #win-banner, body.today-mode #full-banner, body.today-mode #challenge-banner { display: none !important; }
+body.today-mode #win-banner, body.today-mode #full-banner, body.today-mode #challenge-banner, body.today-mode .report-line { display: none !important; }
 
 /* The cost of a reveal, popping up beside the timer */
 .penalty { display: inline-block; margin-left: 6px; color: var(--red); font-weight: 600; opacity: 0; }
@@ -1026,7 +1048,7 @@ dialog .alert-actions button.primary:hover { background: var(--accent-hover); }
    ------------------------------------------------------------------ */
 @media print {
     body { padding: 0; background: #fff; color: #000; }
-    .toolbar, .controls, .status, .banner, .help, .clue-bar, #kbd, dialog, .menu-list { display: none !important; }
+    .toolbar, .controls, .status, .banner, .help, .clue-bar, #kbd, dialog, .menu-list, .report-line { display: none !important; }
     .grid-wrap { box-shadow: none; border-radius: 0; background: none; border: 2px solid #000; }
     table { --cell: 26px; }
     td { border: 1px solid #000; color: #000; }

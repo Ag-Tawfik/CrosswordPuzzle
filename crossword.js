@@ -114,6 +114,7 @@ window.startGame = function (puzzle) {
         cell.value = value;
         cell.pencil = pencil && value !== '';
         cell.letterEl.textContent = value;
+        cell.td.setAttribute('aria-label', cellLabel(cell));
         cell.td.classList.toggle('pencil', cell.pencil);
         cell.td.classList.remove('correct', 'incorrect');
         if (mode === 'easy' && value !== '' && value !== cell.letter) {
@@ -126,12 +127,14 @@ window.startGame = function (puzzle) {
     function buildGrid() {
         for (let r = 0; r < puzzle.rows; r++) {
             const tr = document.createElement('tr');
+            tr.setAttribute('role', 'row');
             cells[r] = [];
             for (let c = 0; c < puzzle.columns; c++) {
                 const td = document.createElement('td');
                 const data = puzzle.cells[r][c];
                 if (!data) {
                     td.className = 'black';
+                    td.setAttribute('aria-hidden', 'true');
                     cells[r][c] = null;
                 } else {
                     td.className = 'white';
@@ -139,7 +142,7 @@ window.startGame = function (puzzle) {
                     td.dataset.col = c;
                     td.dataset.answer = data.letter; // used by the printed answer key
                     td.setAttribute('role', 'gridcell');
-                    td.setAttribute('aria-label', `Row ${r + 1} column ${c + 1}`);
+                    td.setAttribute('aria-selected', 'false');
                     if (data.number !== null) {
                         const num = document.createElement('span');
                         num.className = 'number';
@@ -151,6 +154,7 @@ window.startGame = function (puzzle) {
                     td.appendChild(letterEl);
                     const cell = { td, letterEl, value: '', pencil: false, letter: data.letter, number: data.number, r, c };
                     cells[r][c] = cell;
+                    td.setAttribute('aria-label', cellLabel(cell));
                     td.addEventListener('pointerdown', e => {
                         e.preventDefault(); // keep focus on the keyboard input
                         const wasActive = document.activeElement === kbd;
@@ -204,21 +208,35 @@ window.startGame = function (puzzle) {
         });
     }
 
+    // What a screen reader hears for a cell: its place, its number and its letter
+    function cellLabel(cell) {
+        const number = cell.number !== null ? `, ${cell.number}` : '';
+        const letter = cell.value ? `, letter ${cell.value}${cell.pencil ? ' in pencil' : ''}` : ', empty';
+        return `Row ${cell.r + 1}, column ${cell.c + 1}${number}${letter}`;
+    }
+
     function refreshHighlight() {
-        allCells().forEach(cell => cell.td.classList.remove('selected', 'current'));
+        allCells().forEach(cell => { cell.td.classList.remove('selected', 'current'); cell.td.setAttribute('aria-selected', 'false'); });
         Object.values(clues).flat().forEach(cl => cl.el.classList.remove('active'));
         if (!current) return;
 
         wordCells(current.r, current.c, orientation).forEach(cell => cell.td.classList.add('selected'));
-        cellAt(current.r, current.c).td.classList.add('current');
+        const here = cellAt(current.r, current.c);
+        here.td.classList.add('current');
+        here.td.setAttribute('aria-selected', 'true');
 
         const cl = clueFor(current.r, current.c, orientation);
+        const dir = orientation === ACROSS ? 'Across' : 'Down';
         if (cl) {
             cl.el.classList.add('active');
-            activeClueEl.innerHTML = `<b>${cl.number} ${orientation === ACROSS ? 'Across' : 'Down'}</b> ${escapeHtml(clueText(cl))}`;
+            activeClueEl.innerHTML = `<b>${cl.number} ${dir}</b> ${escapeHtml(clueText(cl))}`;
+            // The hidden input holds focus, so its label is what a screen reader reads
+            kbd.setAttribute('aria-label', `${cl.number} ${dir}: ${clueText(cl)}. ${cellLabel(here)}. Type a letter.`);
         } else {
             activeClueEl.textContent = '';
+            kbd.setAttribute('aria-label', `${cellLabel(here)}. Type a letter.`);
         }
+        updateReportLink(cl, orientation);
     }
 
     function refreshClueDone() {
@@ -512,7 +530,8 @@ window.startGame = function (puzzle) {
         return `Challenge missed by ${formatTime(elapsed - puzzle.beat)}.`;
     }
 
-    function challengeLink() {
+    // A link to this exact puzzle; with beat, a challenge carrying a time to beat
+    function puzzleLink(beat) {
         const params = new URLSearchParams();
         if (puzzle.custom) {
             const custom = new URLSearchParams(window.location.search).get('custom');
@@ -524,8 +543,12 @@ window.startGame = function (puzzle) {
         else params.set('size', String(puzzle.rows));
         if (puzzle.date) params.set('date', puzzle.date);
         else params.set('seed', String(puzzle.seed));
-        params.set('beat', String(elapsed));
+        if (beat !== undefined) params.set('beat', String(beat));
         return `${new URL('index.html', window.location.href)}?${params}`;
+    }
+
+    function challengeLink() {
+        return puzzleLink(elapsed);
     }
 
     document.getElementById('challenge-button').addEventListener('click', async () => {
@@ -540,11 +563,102 @@ window.startGame = function (puzzle) {
                 button.textContent = 'Link copied';
             }
         } catch (e) {
-            shareText.value = text;
-            shareCopy.textContent = 'Copy';
-            shareDialog.showModal();
-            shareText.select();
+            showCopyFallback('Your result', text);
         }
+    });
+
+    // --- Report a clue ----------------------------------------------------------------
+    // A link under the clue lists opens a GitHub issue prefilled with the clue in
+    // view, so a wrong or unfair clue can be reported in two taps. Custom puzzles
+    // have no one to report to.
+
+    const REPO_ISSUES = 'https://github.com/Ag-Tawfik/CrosswordPuzzle/issues/new';
+    const reportLine = document.getElementById('report-line');
+    const reportLink = document.getElementById('report-link');
+
+    function updateReportLink(cl, o) {
+        if (!reportLine) return;
+        if (!cl || puzzle.custom) { reportLine.hidden = true; return; }
+        const word = wordCells(cl.row, cl.col, o).map(cell => cell.letter).join('');
+        const dir = o === ACROSS ? 'Across' : 'Down';
+        const title = `Clue report: ${word} (${puzzle.setName})`;
+        const body = [
+            `**Set:** ${puzzle.setName} (${puzzle.set})`,
+            `**Puzzle:** ${puzzle.date ? puzzle.date : `seed ${puzzle.seed}`}, ${puzzle.rows}×${puzzle.rows}${puzzle.mini ? ' Mini' : ''}, ${mode} mode`,
+            `**Clue:** ${cl.number} ${dir}: "${cl.clue}"${cl.hardClue ? ` (hard: "${cl.hardClue}")` : ''}`,
+            `**Answer:** ${word}`,
+            `**Link:** ${puzzleLink()}`,
+            '',
+            '**What is wrong:** ',
+            '',
+        ].join('\n');
+        reportLink.href = `${REPO_ISSUES}?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+        reportLine.hidden = false;
+    }
+
+    // --- Backup and restore -------------------------------------------------------------
+    // Stats live in this browser only. A backup code is the stats as text, so they
+    // can be carried to another browser or phone and restored there.
+
+    const BACKUP_PREFIX = 'CW1.';
+
+    function backupCode() {
+        const bytes = new TextEncoder().encode(JSON.stringify(loadStats()));
+        let bin = '';
+        bytes.forEach(b => { bin += String.fromCharCode(b); });
+        return BACKUP_PREFIX + btoa(bin);
+    }
+
+    function parseBackup(text) {
+        const t = String(text || '').trim();
+        if (!t.startsWith(BACKUP_PREFIX)) return null;
+        try {
+            const bin = atob(t.slice(BACKUP_PREFIX.length));
+            const s = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, ch => ch.charCodeAt(0))));
+            if (!s || typeof s !== 'object' || !Array.isArray(s.history)) return null;
+            return s;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    const restoreDialog = document.getElementById('restore-dialog');
+    const restoreText = document.getElementById('restore-text');
+    const restoreError = document.getElementById('restore-error');
+
+    document.getElementById('backup-copy').addEventListener('click', async () => {
+        const button = document.getElementById('backup-copy');
+        const code = backupCode();
+        try {
+            await navigator.clipboard.writeText(code);
+            button.textContent = 'Copied';
+            setTimeout(() => { button.textContent = 'Copy backup code'; }, 2000);
+        } catch (e) {
+            showCopyFallback('Your backup code', code);
+        }
+    });
+
+    document.getElementById('backup-restore').addEventListener('click', () => {
+        document.getElementById('stats-dialog').close();
+        restoreText.value = '';
+        restoreError.hidden = true;
+        restoreDialog.showModal();
+        restoreText.focus();
+    });
+
+    document.getElementById('restore-go').addEventListener('click', () => {
+        const s = parseBackup(restoreText.value);
+        if (!s) {
+            restoreError.textContent = 'That is not a backup code.';
+            restoreError.hidden = false;
+            return;
+        }
+        writeJson(STATS_KEY, s);
+        writeJson(STATS_KEY, loadStats()); // normalise the restored shape
+        restoreDialog.close();
+        refreshStreak();
+        document.querySelectorAll('#stats-dialog .recent').forEach(el => el.remove());
+        showStats();
     });
 
     function verdict(record) {
@@ -802,10 +916,7 @@ window.startGame = function (puzzle) {
                 button.textContent = 'Copied';
             }
         } catch (e) {
-            shareText.value = text;
-            shareCopy.textContent = 'Copy';
-            shareDialog.showModal();
-            shareText.select();
+            showCopyFallback('Your result', text);
         }
     });
 
@@ -813,6 +924,15 @@ window.startGame = function (puzzle) {
     const shareDialog = document.getElementById('share-dialog');
     const shareText = document.getElementById('share-text');
     const shareCopy = document.getElementById('share-copy');
+
+    // The dialog that shows text to copy by hand when the clipboard is blocked
+    function showCopyFallback(title, text) {
+        document.getElementById('share-title').textContent = title;
+        shareText.value = text;
+        shareCopy.textContent = 'Copy';
+        shareDialog.showModal();
+        shareText.select();
+    }
     shareCopy.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(shareText.value);
