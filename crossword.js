@@ -558,8 +558,13 @@ window.startGame = function (puzzle) {
 
     // --- Stats and streaks ------------------------------------------------------------
 
-    function todayUtc() {
-        return new Date().toISOString().slice(0, 10);
+    // The player's own calendar day. Streaks and the archive turn over at local
+    // midnight; a stored date after today can only be a UTC-dated record from
+    // before the day followed local time, and is treated as today's.
+    function todayLocal() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     }
 
     function previousDay(dateStr) {
@@ -623,12 +628,13 @@ window.startGame = function (puzzle) {
         const id = storageKey;
         if (stats.history.some(h => h.id === id)) return null;
 
-        const today = todayUtc();
+        const today = todayLocal();
         if (puzzle.daily && puzzle.date === today) {
             const streakKey = puzzle.mini ? 'miniStreak' : 'streak';
             const lastKey = puzzle.mini ? 'lastMini' : 'lastDaily';
-            if (stats[lastKey] === previousDay(today)) stats[streakKey] += 1;
-            else if (stats[lastKey] !== today) stats[streakKey] = 1;
+            const last = stats[lastKey];
+            if (last === previousDay(today)) stats[streakKey] += 1;
+            else if (!(last === today || (last && last > today))) stats[streakKey] = 1;
             stats[lastKey] = today;
         }
 
@@ -658,9 +664,9 @@ window.startGame = function (puzzle) {
 
     // A streak survives until the end of the day after the last daily solve
     function currentStreak(stats, mini = puzzle.mini) {
-        const today = todayUtc();
+        const today = todayLocal();
         const last = mini ? stats.lastMini : stats.lastDaily;
-        if (last === today || last === previousDay(today)) return mini ? stats.miniStreak : stats.streak;
+        if (last === today || last === previousDay(today) || (last && last > today)) return mini ? stats.miniStreak : stats.streak;
         return 0;
     }
 
@@ -730,7 +736,7 @@ window.startGame = function (puzzle) {
 
     function renderCalendar() {
         const { year, month } = calendarMonth;
-        const today = todayUtc();
+        const today = todayLocal();
         const thisMonth = monthOf(today);
         const days = loadStats().days;
         const first = new Date(Date.UTC(year, month - 1, 1));
@@ -773,7 +779,7 @@ window.startGame = function (puzzle) {
         calendarButton.hidden = true; // a custom puzzle has no daily archive
     } else {
         calendarButton.addEventListener('click', () => {
-            calendarMonth = monthOf(puzzle.date || todayUtc());
+            calendarMonth = monthOf(puzzle.date || todayLocal());
             renderCalendar();
             calendarDialog.showModal();
         });
