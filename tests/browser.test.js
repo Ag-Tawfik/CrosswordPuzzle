@@ -559,6 +559,9 @@ describe('creator and archive', () => {
         assert.ok(await page.locator('#featured-thumb rect').count() > 60, 'the thumbnail draws the white cells');
         assert.equal(await page.locator('#featured-eyebrow').evaluate(el => el.textContent), "Today's pick");
         assert.equal(await page.locator('.today-card .mono').count(), sets.length, 'every card has a monogram');
+        // On a first visit the explanation sits under the date, above the featured card
+        assert.ok(await page.locator('#today-help').isVisible(), 'the help line shows on a first visit');
+        assert.ok(await page.evaluate(() => document.getElementById('today-help').getBoundingClientRect().top < document.getElementById('today-featured').getBoundingClientRect().top), 'the help line sits above the featured card');
         assert.ok(await page.locator('#today-next').isVisible(), 'the forward arrow shows on desktop');
         await page.click('#today-next');
         await page.waitForFunction(() => document.getElementById('today-track').scrollLeft > 100);
@@ -578,8 +581,9 @@ describe('creator and archive', () => {
         await page.waitForFunction(() => document.getElementById('today') && !document.getElementById('today').hidden);
         assert.equal(await page.locator('.today-card a.solved').count(), 1);
         assert.ok(await page.locator('.today-card').first().locator('a').nth(1).evaluate(a => a.classList.contains('solved')), 'the solved Mini is ticked');
-        assert.match(await page.locator('#today-streaks').innerText(), /Mini streak 1/);
+        assert.match(await page.locator('#today-streaks').innerText(), /^1 of \d+ solved today · Mini streak 1$/);
         assert.ok(!(await page.locator('#today-streaks').innerText()).includes('Streak 1'), 'no full streak yet');
+        assert.ok(await page.locator('#today-help').isHidden(), 'the help line goes once anything is solved');
         assert.ok((await page.locator('#today-random').getAttribute('href')).includes('set=mixed&seed='));
         assert.match(await page.locator('.today-card').first().locator('.today-sub').innerText(), /1 of 2 solved/);
 
@@ -640,6 +644,88 @@ describe('creator and archive', () => {
         await page.goto(base + 'index.html');
         await page.waitForFunction(() => window.__puzzle !== undefined);
         assert.match(await page.locator('#today-streaks').innerText(), /Streak 4/);
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
+    test('a report link under the clues opens a prefilled issue for the clue in view', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals&seed=5');
+        const line = page.locator('#report-line');
+        assert.ok(await line.isVisible(), 'the report line shows once a clue is selected');
+        const first = page.locator('#across-clues .clue').first();
+        const number = (await first.locator('.n').innerText()).replace(/\D/g, '');
+        await first.click();
+        const href = await page.locator('#report-link').getAttribute('href');
+        assert.ok(href.startsWith('https://github.com/Ag-Tawfik/CrosswordPuzzle/issues/new?title='), href);
+        const url = new URL(href);
+        const answer = await page.evaluate(() => [...document.querySelectorAll('td.selected')].map(td => td.dataset.answer).join(''));
+        assert.equal(url.searchParams.get('title'), `Clue report: ${answer} (Animals)`);
+        const body = url.searchParams.get('body');
+        assert.ok(body.includes(`**Clue:** ${number} Across:`), body);
+        assert.ok(body.includes('**Set:** Animals (animals)') && body.includes('seed 5, 12×12') && body.includes(`**Answer:** ${answer}`), body);
+        assert.ok(body.includes('set=animals&size=12&seed=5'), 'the body links to this exact puzzle');
+        assert.equal(await page.locator('#report-link').getAttribute('target'), '_blank');
+        // A custom puzzle has no one to report to
+        const custom = await page.evaluate(() => Crossword.base64urlEncode(JSON.stringify({ name: 'T', words: { CAT: 'Pet', ACT: 'Deed', TEA: 'Drink', EAT: 'Dine' } })));
+        await go(page, base + 'index.html?custom=' + custom);
+        assert.ok(await page.evaluate(() => window.__puzzle && window.__puzzle.custom), 'the custom puzzle loaded');
+        assert.ok(await line.isHidden(), 'no report line on a custom puzzle');
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
+    test('stats can be copied as a backup code and restored in another browser', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals&mini=1&seed=3');
+        await solve(page);
+        await page.evaluate(() => { navigator.clipboard.writeText = t => { window.__copied = t; return Promise.resolve(); }; });
+        await page.click('#stats-button');
+        assert.match((await page.locator('#stats-list').innerText()).replace(/\s+/g, ' '), /Puzzles solved 1/);
+        await page.click('#backup-copy');
+        const code = await page.evaluate(() => window.__copied);
+        assert.ok(code && code.startsWith('CW1.'), 'a backup code was copied');
+        assert.equal(await page.locator('#backup-copy').innerText(), 'Copied');
+        await page.keyboard.press('Escape');
+
+        // A fresh browser has nothing; a wrong code is refused; the right one brings the stats back
+        const other = await newPage();
+        await go(other, base + 'index.html?set=food&seed=9');
+        await other.click('#stats-button');
+        assert.match((await other.locator('#stats-list').innerText()).replace(/\s+/g, ' '), /Puzzles solved 0/);
+        await other.click('#backup-restore');
+        assert.ok(await other.locator('#restore-dialog').isVisible());
+        await other.fill('#restore-text', 'not a code');
+        await other.click('#restore-go');
+        assert.ok(await other.locator('#restore-error').isVisible(), 'junk is refused');
+        await other.fill('#restore-text', code);
+        await other.click('#restore-go');
+        await other.waitForFunction(() => document.getElementById('stats-dialog').open);
+        const restored = (await other.locator('#stats-list').innerText()).replace(/\s+/g, ' ');
+        assert.match(restored, /Puzzles solved 1/);
+        assert.match(restored, /7×7 Mini best \d+:\d\d/, 'the per-size record came across');
+        assert.deepEqual(other.errors, []);
+        await other.context().close();
+        assert.deepEqual(page.errors, []);
+        await page.context().close();
+    });
+
+    test('the grid carries roles and labels a screen reader can follow', async () => {
+        const page = await newPage();
+        await go(page, base + 'index.html?set=animals&seed=5');
+        assert.equal(await page.locator('#crossword-grid').getAttribute('role'), 'grid');
+        assert.equal(await page.locator('#crossword-grid tr').first().getAttribute('role'), 'row');
+        assert.equal(await page.locator('td.black').first().getAttribute('aria-hidden'), 'true');
+        const first = page.locator('td.white').first();
+        assert.match(await first.getAttribute('aria-label'), /^Row \d+, column \d+(, \d+)?, empty$/);
+        await first.click();
+        assert.equal(await first.getAttribute('aria-selected'), 'true');
+        assert.equal(await page.locator('td[aria-selected="true"]').count(), 1, 'exactly one cell is selected');
+        const label = await page.locator('#kbd').getAttribute('aria-label');
+        assert.match(label, /^\d+ (Across|Down): .+\. Row \d+, column \d+.*\. Type a letter\.$/, label);
+        await page.keyboard.press('Q');
+        assert.match(await first.getAttribute('aria-label'), /, letter Q$/);
+        assert.equal(await page.locator('#kbd').getAttribute('aria-describedby'), 'active-clue');
         assert.deepEqual(page.errors, []);
         await page.context().close();
     });

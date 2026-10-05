@@ -97,12 +97,26 @@
         const streak = alive(stats.lastDaily) ? stats.streak || 0 : 0;
         const miniStreak = alive(stats.lastMini) ? stats.miniStreak || 0 : 0;
         const streaksEl = document.getElementById('today-streaks');
-        if (streak || miniStreak) {
+        const names = sets.flatMap(s => [s.name, `${s.name} Mini`]);
+        const solvedCount = names.filter(n => solvedToday.includes(n)).length;
+        if (solvedCount || streak || miniStreak) {
             const parts = [];
+            if (solvedCount === names.length) parts.push(`All <strong>${names.length}</strong> solved today`);
+            else if (solvedCount) parts.push(`<strong>${solvedCount}</strong> of ${names.length} solved today`);
             if (streak) parts.push(`Streak <strong>${streak}</strong>`);
             if (miniStreak) parts.push(`Mini streak <strong>${miniStreak}</strong>`);
             streaksEl.innerHTML = parts.join(' · ');
             streaksEl.hidden = false;
+        }
+
+        // The one line that explains the page sits under the date on a first visit,
+        // and goes once the player has solved anything
+        const help = document.getElementById('today-help');
+        if ((stats.solved || 0) > 0) {
+            help.hidden = true;
+        } else {
+            help.classList.add('intro');
+            streaksEl.insertAdjacentElement('afterend', help);
         }
 
         // The shelf: one card per set, a tinted monogram, its daily and its Mini

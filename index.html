@@ -54,7 +54,7 @@
         </div>
         <div class="today-track" id="today-track"></div>
         <p class="today-actions"><a class="link" id="today-random" href="index.html?set=mixed">Random puzzle</a><span class="dot" aria-hidden="true">·</span><a class="link" href="create.html">Create your own</a></p>
-        <p class="help">Each word set has a daily puzzle and a Mini. Solved ones get a tick. Progress is saved in this browser.</p>
+        <p class="help" id="today-help">Each word set has a daily puzzle and a Mini. Solved ones get a tick. Progress is saved in this browser.</p>
     </section>
 
     <form class="toolbar" method="get" id="toolbar">
@@ -106,10 +106,10 @@
         <button type="button" id="next-word" aria-label="Next word"><svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m7.5 4 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
 
-    <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Type letters into the crossword">
+    <input id="kbd" type="text" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" aria-label="Type letters into the crossword" aria-describedby="active-clue">
 
     <div class="grid-wrap">
-        <table id="crossword-grid" aria-label="Crossword grid"></table>
+        <table id="crossword-grid" role="grid" aria-label="Crossword grid"></table>
     </div>
 
     <div class="controls">
@@ -138,12 +138,28 @@
             <ol id="down-clues"></ol>
         </section>
     </div>
+    <p class="report-line" id="report-line" hidden>Something wrong with this clue? <a id="report-link" href="#" target="_blank" rel="noopener">Report it</a></p>
 
     <dialog id="stats-dialog">
         <h2>Your stats</h2>
         <dl id="stats-list"></dl>
-        <p class="muted">Stored in this browser only.</p>
+        <p class="muted">Stored in this browser only. A backup code carries them to another browser or phone.</p>
+        <div class="alert-actions">
+            <button type="button" id="backup-copy">Copy backup code</button>
+            <button type="button" id="backup-restore">Restore…</button>
+        </div>
         <form method="dialog"><button type="submit">Close</button></form>
+    </dialog>
+
+    <dialog id="restore-dialog" class="alert" aria-labelledby="restore-title">
+        <h2 id="restore-title">Restore a backup</h2>
+        <p>Paste a backup code. It replaces the stats in this browser.</p>
+        <textarea id="restore-text" rows="4" aria-label="Backup code" spellcheck="false" autocomplete="off"></textarea>
+        <p class="error" id="restore-error" hidden></p>
+        <form method="dialog" class="alert-actions">
+            <button type="submit" value="cancel">Cancel</button>
+            <button type="button" id="restore-go" class="primary">Restore</button>
+        </form>
     </dialog>
 
     <dialog id="calendar-dialog" class="calendar" aria-labelledby="calendar-title">
